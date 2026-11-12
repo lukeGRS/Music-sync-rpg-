@@ -1,0 +1,16 @@
+{
+  "name": "synctube-music",
+  "version": "1.0.0",
+  "description": "Ouça música em tempo real com amigos — YouTube + áudio direto, crossfade, fila compartilhada e chat.",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve .",
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "serve": "^14.2.3",
+    "esbuild": "^0.21.0"
+  },
+  "license": "MIT"
+}
