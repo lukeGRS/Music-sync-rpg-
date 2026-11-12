@@ -1,0 +1,2652 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0a0c0b">
+<title>SyncTube Music</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='12' cy='16' r='9' fill='%2322e58b'/%3E%3Ccircle cx='20' cy='16' r='9' fill='%2322e58b' fill-opacity='.55'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0a0c0b;--bg2:#101311;--panel:#151916;--panel2:#1c211d;--hover:#222823;--line:#272e29;
+  --text:#eef3ef;--mute:#9aa59d;--dim:#6b766e;--acc:#22e58b;--acc2:#12b86c;--accfg:#04150c;
+  --warn:#ffb84d;--bad:#ff5d6c;--shadow:0 12px 40px rgba(0,0,0,.45);--r:12px;
+  --side:236px;--bar:88px;--nav:0px;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#f4f6f4;--bg2:#ebefec;--panel:#ffffff;--panel2:#f0f3f1;--hover:#e5eae6;--line:#d9dfda;
+  --text:#101512;--mute:#56625a;--dim:#7d8981;--acc:#0fb36a;--acc2:#0a9658;--accfg:#ffffff;
+  --shadow:0 12px 40px rgba(20,40,30,.18);color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.4}
+a{color:var(--acc)}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.f{fill:currentColor;stroke:none}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;border:2px solid transparent;background-clip:content-box}::-webkit-scrollbar-thumb:hover{background:var(--dim);background-clip:content-box;border:2px solid transparent}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
+
+/* layout */
+#app{display:grid;grid-template-columns:var(--side) 1fr;grid-template-rows:1fr var(--bar);height:100%;gap:8px;padding:8px}
+#side{grid-row:1;background:var(--panel);border-radius:var(--r);padding:18px 12px;display:flex;flex-direction:column;gap:6px;overflow:auto}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.3px;padding:2px 10px 14px}
+.logo svg{width:30px;height:30px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:10px;color:var(--mute);font-weight:600;text-align:left;transition:.15s}
+.nav button:hover{color:var(--text);background:var(--hover)}
+.nav button.on{color:var(--text);background:var(--panel2)}
+.nav button.on svg{color:var(--acc)}
+.nav .badge{margin-left:auto;background:var(--acc);color:var(--accfg);border-radius:20px;font-size:11px;font-weight:800;padding:1px 7px}
+.nav .live{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 0 var(--acc);animation:pulse 1.8s infinite}
+.side-sep{height:1px;background:var(--line);margin:10px 8px}
+.side-h{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);padding:6px 12px;font-weight:700}
+.side-pl{display:flex;flex-direction:column;gap:2px;overflow:auto}
+.side-pl button{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:10px;color:var(--mute);text-align:left}
+.side-pl button:hover{background:var(--hover);color:var(--text)}
+.side-pl .cv{width:34px;height:34px;border-radius:6px}
+.side-pl span.t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#main{grid-row:1;background:linear-gradient(180deg,var(--bg2),var(--panel) 280px);border-radius:var(--r);overflow:auto;position:relative}
+#view{padding:24px 28px 40px;max-width:1500px;margin:auto}
+#bar{grid-column:1/-1;grid-row:2;background:var(--panel);border-radius:var(--r);display:grid;grid-template-columns:minmax(170px,1fr) minmax(280px,1.7fr) minmax(280px,1.15fr);align-items:center;gap:16px;padding:0 16px;position:relative}
+
+/* tipografia / blocos */
+h1{font-size:30px;letter-spacing:-.6px;font-weight:800}
+h2{font-size:20px;letter-spacing:-.3px;font-weight:800}
+h3{font-size:15px;font-weight:700}
+.sub{color:var(--mute)}
+.mute{color:var(--mute)}.dim{color:var(--dim)}
+.sec{margin-top:30px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;gap:12px}
+.sec-h a,.link{color:var(--mute);font-weight:600;font-size:13px;cursor:pointer;text-decoration:none;background:none;border:0}
+.sec-h a:hover,.link:hover{color:var(--text);text-decoration:underline}
+.page-h{display:flex;align-items:flex-end;gap:22px;margin-bottom:22px;flex-wrap:wrap}
+.page-h .cv{width:190px;height:190px;border-radius:10px;box-shadow:var(--shadow)}
+.page-h .meta{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1}
+.page-h .kind{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mute)}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.empty{border:1px dashed var(--line);border-radius:var(--r);padding:34px;text-align:center;color:var(--mute);display:flex;flex-direction:column;gap:12px;align-items:center}
+.empty svg{width:34px;height:34px;color:var(--dim)}
+
+/* botões */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;font-weight:700;background:var(--panel2);border:1px solid var(--line);transition:.15s;white-space:nowrap}
+.btn:hover:not(:disabled){background:var(--hover);transform:translateY(-1px)}
+.btn.pri{background:var(--acc);color:var(--accfg);border-color:transparent}
+.btn.pri:hover:not(:disabled){background:var(--acc2)}
+.btn.bad{color:var(--bad)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn.ghost{background:none;border-color:transparent;color:var(--mute)}
+.btn.ghost:hover:not(:disabled){color:var(--text);background:var(--hover)}
+.ib{width:34px;height:34px;border-radius:50%;display:inline-grid;place-items:center;color:var(--mute);transition:.12s;flex:none}
+.ib:hover:not(:disabled){color:var(--text);background:var(--hover)}
+.ib.on{color:var(--acc)}
+.ib.fav.on{color:var(--acc)}
+.ib.fav.on svg{fill:currentColor}
+.big-play{width:56px;height:56px;border-radius:50%;background:var(--acc);color:var(--accfg);display:grid;place-items:center;transition:.15s;flex:none}
+.big-play:hover:not(:disabled){transform:scale(1.06);background:var(--acc2)}
+.big-play svg{width:26px;height:26px}
+
+/* capas */
+.cv{background:var(--panel2) center/cover no-repeat;display:grid;place-items:center;color:rgba(255,255,255,.75);flex:none;position:relative;overflow:hidden;border-radius:8px}
+.cv svg{width:42%;height:42%;opacity:.8}
+.cv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cv.pl{background-image:none}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:16px}
+.card{background:var(--panel2);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;cursor:pointer;position:relative;transition:.18s;min-width:0;text-align:left}
+.card:hover{background:var(--hover);transform:translateY(-2px)}
+.card .cv{width:100%;aspect-ratio:1;border-radius:8px}
+.card .t{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .s{color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .pp{position:absolute;right:20px;top:calc(100% - 82px);opacity:0;transform:translateY(8px);transition:.18s;width:44px;height:44px;border-radius:50%;background:var(--acc);color:var(--accfg);display:grid;place-items:center;box-shadow:var(--shadow)}
+.card:hover .pp,.card:focus-within .pp{opacity:1;transform:none}
+@media (hover:none){.card .pp{opacity:1;transform:none}}
+
+/* lista de faixas */
+.tl{display:flex;flex-direction:column}
+.tl-h,.tr{display:grid;grid-template-columns:36px minmax(0,6fr) minmax(0,3fr) minmax(0,2fr) 56px 36px 36px;gap:12px;align-items:center;padding:6px 10px;border-radius:8px}
+.tl-h{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--line);border-radius:0;padding-bottom:8px;margin-bottom:6px;font-weight:700}
+.tr{transition:background .1s;position:relative}
+.tr:hover{background:var(--panel2)}
+.tr.cur{background:var(--panel2)}
+.tr.cur .tt{color:var(--acc)}
+.tr.drag-over{box-shadow:0 -2px 0 var(--acc)}
+.tr.dragging{opacity:.4}
+.tr .n{color:var(--dim);text-align:center;position:relative;height:36px;display:grid;place-items:center}
+.tr .n .num{display:block}.tr .n .pl{display:none}
+.tr:hover .n .num,.tr:hover .n .eq{display:none}.tr:hover .n .pl{display:grid}
+.tr .n button{position:absolute;inset:0;margin:auto;width:32px;height:32px;border-radius:50%;place-items:center;color:var(--text)}
+.tr .info{display:flex;align-items:center;gap:12px;min-width:0}
+.tr .info .cv{width:40px;height:40px;border-radius:5px}
+.tr .tt{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.tr .ar{color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.tr .al,.tr .da{color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr .du{color:var(--mute);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+.tr .src{display:inline-block;font-size:10px;font-weight:800;padding:0 5px;border-radius:4px;background:var(--hover);color:var(--mute);margin-left:6px;vertical-align:1px;letter-spacing:.4px}
+.tr .ib{opacity:.0}.tr:hover .ib,.tr .ib.on,.tr:focus-within .ib{opacity:1}
+@media (hover:none){.tr .ib{opacity:1}}
+.eq{display:flex;gap:2px;align-items:flex-end;height:14px}
+.eq i{width:3px;background:var(--acc);border-radius:2px;animation:eq 1s ease-in-out infinite;height:30%}
+.eq i:nth-child(2){animation-delay:-.4s}.eq i:nth-child(3){animation-delay:-.7s}
+.eq.paused i{animation-play-state:paused}
+@keyframes eq{0%,100%{height:25%}50%{height:100%}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--acc) 60%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .9s linear infinite}
+
+/* player */
+.np{display:flex;align-items:center;gap:12px;min-width:0}
+.np .cv{width:56px;height:56px;border-radius:6px}
+.np .tx{min-width:0}
+.np .tt{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.np .ar{color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc{display:flex;flex-direction:column;align-items:center;gap:6px}
+.pc-b{display:flex;align-items:center;gap:10px}
+.pc-p{display:flex;align-items:center;gap:10px;width:100%}
+.pc-p span{font-size:12px;color:var(--mute);width:42px;font-variant-numeric:tabular-nums}
+.pc-p span:first-child{text-align:right}
+.pr{position:relative;flex:1;height:14px;display:flex;align-items:center}
+.pr .trk{position:absolute;left:0;right:0;height:4px;border-radius:4px;background:var(--line);overflow:hidden}
+.pr .fill{position:absolute;left:0;top:0;bottom:0;background:var(--text);width:0}
+.pr:hover .fill{background:var(--acc)}
+.pr .xfz{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--acc) 70%,transparent) 0 3px,transparent 3px 6px);right:0;width:0}
+.pr input{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer;margin:0}
+.pr input:disabled{cursor:default}
+.pr .knob{position:absolute;width:12px;height:12px;border-radius:50%;background:#fff;top:1px;margin-left:-6px;opacity:0;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.pr:hover .knob{opacity:1}
+.pb-r{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.vol{display:flex;align-items:center;gap:6px;flex:1 1 90px;min-width:80px;max-width:140px}
+.pb-r>.syncpill,.pb-r>.xfpill{flex:none}
+#fab{position:fixed;right:14px;bottom:calc(var(--bar) + var(--nav) + 14px);width:50px;height:50px;border-radius:50%;padding:0;place-items:center;z-index:35;box-shadow:var(--shadow)}
+.vol input{width:100%}
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;height:16px;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(90deg,var(--text) var(--p,0%),var(--line) var(--p,0%))}
+input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:4px;background:var(--text)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#fff;margin-top:-4px;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:#fff}
+.vol:hover input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--acc) var(--p,0%),var(--line) var(--p,0%))}
+.xfpill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px;background:var(--panel2);color:var(--mute);border:1px solid var(--line);white-space:nowrap;cursor:pointer}
+.xfpill.on{color:var(--acc);border-color:color-mix(in srgb,var(--acc) 50%,transparent)}
+.xfpill.act{background:var(--acc);color:var(--accfg);animation:pulse 1.2s infinite}
+.syncpill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--panel2);color:var(--mute);border:1px solid var(--line);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim);display:inline-block;flex:none}
+.dot.ok{background:var(--acc)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}
+
+/* cartão do YouTube */
+.yt-card{position:fixed;right:16px;bottom:calc(var(--bar) + 20px);width:320px;height:180px;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);background:#000;z-index:30;transition:opacity .2s}
+.yt-card.off{left:-10000px;right:auto;opacity:0}
+.yt-card .yt-deck{position:absolute;inset:0}
+.yt-card .yt-deck:not(.on){left:-10000px}
+.yt-card iframe{width:100%;height:100%;border:0;display:block}
+.yt-card .cap{position:absolute;left:0;right:0;top:0;font-size:11px;padding:4px 10px;background:linear-gradient(#000a,transparent);color:#fff;pointer-events:none;z-index:2}
+
+/* formulários */
+input[type=text],input[type=url],input[type=search],input:not([type]),select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;outline:none;transition:.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.5px}
+label.f>*:not(:first-child){text-transform:none;letter-spacing:0;font-weight:400;color:var(--text);font-size:14px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:14px}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;padding:12px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.sw:last-child{border:0}
+.sw .l{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 230px}
+.sw .l small{color:var(--mute);font-size:12px}
+.tog{position:relative;width:42px;height:24px;flex:none}
+.tog input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;width:100%;height:100%;z-index:1}
+.tog i{position:absolute;inset:0;border-radius:99px;background:var(--line);transition:.2s}
+.tog i:after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+.tog input:checked+i{background:var(--acc)}
+.tog input:checked+i:after{transform:translateX(18px)}
+.tog input:disabled{cursor:not-allowed}.tog input:disabled+i{opacity:.4}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;flex-wrap:nowrap;flex:none;max-width:100%}
+.seg button{padding:6px 14px;border-radius:99px;font-weight:700;color:var(--mute);font-size:13px;white-space:nowrap}
+.seg button.on{background:var(--acc);color:var(--accfg)}
+.seg button:disabled{opacity:.5}
+.box{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.note{font-size:13px;color:var(--mute);background:var(--panel2);border-left:3px solid var(--acc);padding:10px 14px;border-radius:6px}
+.note.warn{border-color:var(--warn)}.note.bad{border-color:var(--bad)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:var(--hover);color:var(--mute)}
+.chip.ok{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc)}
+.chip.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.chip.bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+
+/* modal, menu, toasts */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:100;padding:16px;animation:fade .15s;backdrop-filter:blur(3px)}
+@keyframes fade{from{opacity:0}}
+.md{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;box-shadow:var(--shadow);animation:pop .18s}
+@keyframes pop{from{transform:translateY(10px) scale(.98);opacity:0}}
+.md-h{display:flex;justify-content:space-between;align-items:center;padding:18px 22px 6px}
+.md-b{padding:10px 22px 22px;display:flex;flex-direction:column;gap:14px}
+.md-f{display:flex;justify-content:flex-end;gap:10px;padding:0 22px 20px;flex-wrap:wrap}
+.menu{position:fixed;z-index:120;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:5px;min-width:210px;box-shadow:var(--shadow);animation:pop .1s}
+.menu button{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:7px;text-align:left}
+.menu button:hover{background:var(--hover)}
+.menu button.bad{color:var(--bad)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--bar) + 24px);display:flex;flex-direction:column;gap:8px;z-index:200;align-items:center;pointer-events:none;width:min(480px,92vw)}
+.toast{background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;box-shadow:var(--shadow);animation:pop .18s;pointer-events:auto;max-width:100%}
+.toast.bad{background:var(--bad);color:#fff}.toast.ok{background:var(--acc);color:var(--accfg)}
+#reqs{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:10px;z-index:150;width:min(340px,92vw)}
+.req{background:var(--panel);border:1px solid var(--acc);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;animation:pop .2s}
+#unlock{position:fixed;left:50%;transform:translateX(-50%);top:14px;z-index:160;display:none}
+#unlock.on{display:flex}
+.bn{display:none}
+.pickrow{display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;cursor:pointer}
+.pickrow:hover{background:var(--hover)}
+.pickrow input{width:18px;height:18px;accent-color:var(--acc)}
+.pickrow .cv{width:40px;height:40px;border-radius:5px}
+.pickrow .tx{min-width:0;flex:1}
+.pickrow .tx b,.pickrow .tx small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pickrow small{color:var(--mute)}
+.pickwrap{max-height:300px;overflow:auto;margin:0 -8px}
+.preview{display:flex;gap:14px;padding:12px;background:var(--panel2);border-radius:12px;align-items:center}
+.preview .cv{width:84px;height:84px;border-radius:8px}
+.preview .col{flex:1;min-width:0;gap:8px}
+.spinner{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+
+/* sala */
+.room-hero{background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 22%,var(--panel2)),var(--panel2) 60%);border:1px solid var(--line);border-radius:18px;padding:24px;display:flex;gap:22px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.code{font:800 34px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:6px;color:var(--acc)}
+.room-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:20px;margin-top:20px;align-items:start}
+.np-big{display:flex;gap:18px;align-items:center}
+.np-big .cv{width:120px;height:120px;border-radius:12px;box-shadow:var(--shadow)}
+.np-big .tx{min-width:0;display:flex;flex-direction:column;gap:6px}
+.np-big .tt{font-size:20px;font-weight:800;line-height:1.2}
+.pp-list{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.pp{display:flex;align-items:center;gap:12px;padding:8px;border-radius:10px}
+.pp:hover{background:var(--panel2)}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;flex:none;position:relative;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.av.off{filter:grayscale(1);opacity:.5}
+.av .st{position:absolute;right:-2px;bottom:-2px;width:13px;height:13px;border-radius:50%;border:2px solid var(--panel);background:var(--dim)}
+.av .st.ok{background:var(--acc)}.av .st.warn{background:var(--warn)}.av .st.bad{background:var(--bad)}
+.pp .tx{flex:1;min-width:0}
+.pp .tx b{display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pp .tx small{color:var(--mute);display:flex;gap:8px;align-items:center}
+.qrow{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px 8px;border-radius:8px}
+.qrow:hover{background:var(--panel2)}
+.qrow.cur{background:var(--panel2)}.qrow.cur .tt{color:var(--acc)}
+.qrow.past{opacity:.55}
+.qrow .cv{width:34px;height:34px;border-radius:4px}
+.qrow .tt{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.qrow .ar{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.qrow .ac{display:flex;gap:2px;align-items:center}
+.qrow .ib{width:30px;height:30px}
+.vote{display:inline-flex;align-items:center;gap:4px;font-weight:800;font-size:12px;color:var(--mute);padding:0 8px;border-radius:99px;height:28px}
+.vote.on{color:var(--acc)}
+.vote:hover{background:var(--hover)}
+.chat{display:flex;flex-direction:column;height:300px}
+.chat-l{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:4px 2px 8px}
+.msg{max-width:88%;padding:6px 11px;border-radius:12px;background:var(--panel2);font-size:13px;word-wrap:anywhere}
+.msg b{display:block;font-size:11px}
+.msg.me{align-self:flex-end;background:color-mix(in srgb,var(--acc) 22%,var(--panel2))}
+.msg.sys{align-self:center;background:none;color:var(--dim);font-size:12px;padding:0}
+.chat-f{display:flex;gap:8px}
+.tabs{display:none}
+
+/* responsivo */
+@media (max-width:1100px){
+  .room-grid{grid-template-columns:1fr}
+  .tr,.tl-h{grid-template-columns:36px minmax(0,6fr) minmax(0,3fr) 56px 36px 36px}
+  .tr .da,.tl-h .da{display:none}
+  .vol{max-width:100px}
+}
+@media (max-width:820px){
+  :root{--bar:128px;--nav:60px}
+  #app{grid-template-columns:1fr;grid-template-rows:1fr var(--bar);padding:0;gap:0;padding-bottom:var(--nav)}
+  #side{display:none}
+  #main{border-radius:0;grid-row:1}
+  #view{padding:16px 14px 28px}
+  h1{font-size:24px}
+  #bar{grid-column:1;border-radius:0;grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:6px 10px;padding:8px 12px;border-top:1px solid var(--line)}
+  .np{grid-column:1;grid-row:1}.np .cv{width:44px;height:44px}
+  .pb-r{display:none}
+  .pc{display:contents}
+  .pc-b{grid-column:2;grid-row:1}
+  .pc-b .ib.hm{display:none}
+  .pc-p{grid-column:1/-1;grid-row:2}
+  .bn{display:flex;position:fixed;left:0;right:0;bottom:0;height:var(--nav);background:var(--panel);border-top:1px solid var(--line);z-index:40;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom)}
+  .bn button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--dim);font-size:10px;font-weight:700;position:relative}
+  .bn button.on{color:var(--acc)}
+  .bn .live{position:absolute;top:10px;left:55%;width:8px;height:8px;border-radius:50%;background:var(--acc)}
+  .tr,.tl-h{grid-template-columns:36px minmax(0,1fr) 48px 34px 34px}
+  .tr .al,.tl-h .al{display:none}
+  .page-h .cv{width:130px;height:130px}
+  .yt-card{width:240px;height:135px;bottom:calc(var(--bar) + var(--nav) + 10px);left:10px;right:auto}
+  #toasts{bottom:calc(var(--bar) + var(--nav) + 12px)}
+  .code{font-size:28px;letter-spacing:4px}
+  .np-big .cv{width:90px;height:90px}
+}
+@media (max-width:820px){.seg{flex-wrap:wrap;border-radius:18px;justify-content:center}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side" aria-label="Navegação">
+    <div class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="12" cy="16" r="9" fill="var(--acc)"/><circle cx="20" cy="16" r="9" fill="var(--acc)" fill-opacity=".5"/></svg>SyncTube Music</div>
+  </aside>
+  <main id="main"><div id="view"></div></main>
+  <footer id="bar" aria-label="Player"></footer>
+</div>
+<nav class="bn" aria-label="Navegação"></nav>
+<div class="yt-card off" id="ytcard"><div class="cap">YouTube</div></div>
+<div id="unlock"><button class="btn pri" style="box-shadow:var(--shadow)">🔊 Toque aqui para ativar o som</button></div>
+<noscript>Este app precisa de JavaScript.</noscript>
+<script>/* SyncTube Music — núcleo puro (sem DOM): estado da sala, relógio, deriva, fontes, ID3 */
+(function (root) {
+'use strict';
+
+const LEAD_MS = 300;          // antecedência dada a play/seek para todos começarem juntos
+const MANUAL_FADE = 0.4;      // fade curto ao pular faixa manualmente
+const FADE_OPTIONS = [0, 3, 5, 8, 10, 12];
+const MAX_QUEUE = 300;
+
+/* ---------- utilidades ---------- */
+function rid(n = 8) {
+  const a = 'abcdefghijklmnopqrstuvwxyz0123456789'; let s = '';
+  for (let i = 0; i < n; i++) s += a[Math.floor(Math.random() * a.length)];
+  return s;
+}
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function genCode(len = 6) {
+  let s = ''; for (let i = 0; i < len; i++) s += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  return s;
+}
+function normCode(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12); }
+function cleanStr(s, max) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+function num(n, lo, hi) { n = Number(n); return isFinite(n) ? Math.min(hi, Math.max(lo, n)) : 0; }
+function fmtTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0; sec = Math.floor(sec);
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+}
+function hash32(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+function hueOf(str) { return parseInt(hash32(String(str)).slice(0, 4), 16) % 360; }
+
+/* ---------- validação de dados vindos da rede ---------- */
+function safeHttpUrl(u) {
+  if (typeof u !== 'string' || u.length > 2000) return '';
+  try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch { return ''; }
+}
+function safeCover(c) {
+  if (typeof c !== 'string' || !c) return '';
+  if (/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(c) && c.length <= 40000) return c;
+  return c.length <= 1000 ? safeHttpUrl(c) : '';
+}
+function sanitizeTrack(t) {
+  if (!t || typeof t !== 'object') return null;
+  const source = t.source === 'youtube' ? 'youtube' : t.source === 'direct' ? 'direct' : null;
+  if (!source) return null;
+  const out = {
+    source,
+    title: cleanStr(t.title, 200) || 'Sem título',
+    artist: cleanStr(t.artist, 120) || 'Artista desconhecido',
+    album: cleanStr(t.album, 120),
+    cover: safeCover(t.cover),
+    duration: num(t.duration, 0, 86400 * 3),
+  };
+  if (source === 'youtube') {
+    if (!/^[\w-]{11}$/.test(t.sourceId || '')) return null;
+    out.sourceId = t.sourceId; out.url = 'https://www.youtube.com/watch?v=' + t.sourceId; out.id = 'y:' + t.sourceId;
+  } else {
+    const u = safeHttpUrl(t.url); if (!u) return null;
+    out.url = u; out.id = 'd:' + hash32(u);
+  }
+  return out;
+}
+
+/* ---------- identificação de links ---------- */
+const UNSUPPORTED = [
+  [/(^|\.)spotify\.com$|^spotify\.link$/, 'Spotify', 'O Spotify só permite tocar dentro dos seus próprios apps (o SDK exige login Premium e não aceita reprodução por link em outros players).'],
+  [/(^|\.)deezer\.com$|^deezer\.page\.link$/, 'Deezer', 'O Deezer só libera trechos de 30 s por API pública; não há reprodução completa por link.'],
+  [/(^|\.)music\.apple\.com$/, 'Apple Music', 'O Apple Music exige MusicKit com assinatura e login; não toca por link direto.'],
+  [/(^|\.)tidal\.com$/, 'Tidal', 'O Tidal não oferece reprodução por link fora dos seus apps.'],
+  [/(^|\.)music\.amazon\.[a-z.]+$/, 'Amazon Music', 'O Amazon Music não oferece reprodução por link fora dos seus apps.'],
+  [/(^|\.)soundcloud\.com$|^snd\.sc$/, 'SoundCloud', 'O SoundCloud só toca via o Widget oficial, que ainda não está integrado (a arquitetura de fontes já comporta esse adaptador).'],
+  [/(^|\.)bandcamp\.com$/, 'Bandcamp', 'O Bandcamp só toca pelo player embutido deles; não há URL de áudio direta.'],
+];
+const AUDIO_EXT = /\.(mp3|ogg|oga|opus|wav|flac|m4a|aac|weba|webm)$/i;
+
+function parseYouTubeId(u) {
+  const host = u.hostname.replace(/^www\./, '').toLowerCase();
+  const ok = (id) => (/^[\w-]{11}$/.test(id || '') ? id : null);
+  if (host === 'youtu.be') return ok(u.pathname.split('/')[1]);
+  if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com' || host === 'youtube-nocookie.com') {
+    if (u.pathname === '/watch') return ok(u.searchParams.get('v'));
+    const m = u.pathname.match(/^\/(embed|shorts|live|v)\/([\w-]{11})/);
+    if (m) return m[2];
+  }
+  return null;
+}
+function identifyUrl(raw) {
+  let s = String(raw || '').trim();
+  if (!s) return { status: 'empty' };
+  if (!/^https?:\/\//i.test(s)) {
+    if (/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(s)) s = 'https://' + s;
+    else return { status: 'invalid', reason: 'Isso não parece um link. Cole um endereço começando com http:// ou https://.' };
+  }
+  let u; try { u = new URL(s); } catch { return { status: 'invalid', reason: 'Link malformado.' }; }
+  if (!/^https?:$/.test(u.protocol)) return { status: 'invalid', reason: 'Só links http(s) são aceitos.' };
+  const host = u.hostname.replace(/^www\./, '').toLowerCase();
+  const yt = parseYouTubeId(u);
+  if (yt) return { status: 'ok', platform: 'youtube', label: 'YouTube', id: yt, url: 'https://www.youtube.com/watch?v=' + yt };
+  if (/(^|\.)youtube\.com$|^youtu\.be$/.test(host))
+    return { status: 'unsupported', platform: 'youtube', label: 'YouTube', reason: 'Esse link do YouTube não aponta para um vídeo específico (playlist, canal ou busca). Cole o link de um vídeo.' };
+  for (const [re, label, reason] of UNSUPPORTED) if (re.test(host)) return { status: 'unsupported', platform: label.toLowerCase(), label, reason };
+  if (AUDIO_EXT.test(u.pathname)) return { status: 'ok', platform: 'direct', label: 'Áudio direto', url: u.href };
+  return { status: 'try', platform: 'direct', label: 'Áudio direto (não confirmado)', url: u.href,
+    reason: 'Não reconheci a extensão; vou tentar carregar o link como arquivo de áudio.' };
+}
+
+/* ---------- ID3v2 (título, artista, álbum, capa) ---------- */
+function parseId3(buf) {
+  const b = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  if (b.length < 10 || b[0] !== 0x49 || b[1] !== 0x44 || b[2] !== 0x33) return null;
+  const ver = b[3];
+  if (ver !== 3 && ver !== 4) return null;
+  const sync = (o) => ((b[o] & 0x7f) << 21) | ((b[o + 1] & 0x7f) << 14) | ((b[o + 2] & 0x7f) << 7) | (b[o + 3] & 0x7f);
+  const be = (o) => ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0;
+  const end = Math.min(b.length, 10 + sync(6));
+  let off = 10;
+  if (b[5] & 0x40) off += ver === 4 ? sync(off) : be(off) + 4;
+  const dec = (enc, bytes) => {
+    let label = 'iso-8859-1';
+    if (enc === 3) label = 'utf-8';
+    else if (enc === 1) {
+      if (bytes[0] === 0xff && bytes[1] === 0xfe) { label = 'utf-16le'; bytes = bytes.subarray(2); }
+      else if (bytes[0] === 0xfe && bytes[1] === 0xff) { label = 'utf-16be'; bytes = bytes.subarray(2); }
+      else label = 'utf-16le';
+    } else if (enc === 2) label = 'utf-16be';
+    return new TextDecoder(label).decode(bytes).replace(/\u0000/g, '').trim();
+  };
+  const out = {};
+  while (off + 10 <= end) {
+    if (b[off] === 0) break;
+    const id = String.fromCharCode(b[off], b[off + 1], b[off + 2], b[off + 3]);
+    const size = ver === 4 ? sync(off + 4) : be(off + 4);
+    const body = off + 10;
+    if (size <= 0 || body + size > b.length) break;
+    if (id === 'TIT2') out.title = dec(b[body], b.subarray(body + 1, body + size));
+    else if (id === 'TPE1') out.artist = dec(b[body], b.subarray(body + 1, body + size));
+    else if (id === 'TALB') out.album = dec(b[body], b.subarray(body + 1, body + size));
+    else if (id === 'APIC' && !out.cover) {
+      const enc = b[body]; let p = body + 1; let q = p;
+      while (q < body + size && b[q] !== 0) q++;
+      const mime = String.fromCharCode(...b.subarray(p, q)); p = q + 2; // fim do mime + tipo da imagem
+      if (enc === 1 || enc === 2) { while (p + 1 < body + size && !(b[p] === 0 && b[p + 1] === 0)) p += 2; p += 2; }
+      else { while (p < body + size && b[p] !== 0) p++; p += 1; }
+      if (p < body + size) out.cover = { mime: /^image\//.test(mime) ? mime : 'image/jpeg', data: b.slice(p, body + size) };
+    }
+    off = body + size;
+  }
+  return out;
+}
+
+/* ---------- relógio compartilhado (NTP simplificado) ---------- */
+class ClockSync {
+  constructor() { this.samples = []; this.offset = 0; this.rtt = null; this.ready = false; }
+  addSample(t0, ts, t1) {
+    const rtt = t1 - t0;
+    if (rtt < 0 || rtt > 5000) return;
+    this.samples.push({ rtt, offset: ts - (t0 + t1) / 2 });
+    if (this.samples.length > 12) this.samples.shift();
+    const best = [...this.samples].sort((a, b) => a.rtt - b.rtt).slice(0, 3);
+    const offs = best.map((s) => s.offset).sort((a, b) => a - b);
+    this.offset = offs[Math.floor(offs.length / 2)];
+    this.rtt = best[0].rtt; this.ready = true;
+  }
+  // estimativa provisória (sem RTT conhecido): só vale até chegar a primeira amostra de ping real
+  provisional(serverMs, local = Date.now()) { if (this.samples.length) return; this.offset = serverMs - local; this.ready = true; }
+  serverNow(local = Date.now()) { return local + this.offset; }
+  toLocal(serverMs) { return serverMs - this.offset; }
+}
+
+/* ---------- correção de deriva ---------- */
+// drift = posição real − posição esperada (s). Retorna {rate} ou {seek:true}.
+function driftAction(drift, correcting = false, fineRate = true) {
+  const a = Math.abs(drift);
+  if (!fineRate) return a > 0.25 ? { seek: true } : { rate: 1 };
+  if (a > 0.6) return { seek: true };
+  if (a < (correcting ? 0.012 : 0.04)) return { rate: 1 };            // histerese: entra em 40 ms, sai em 12 ms
+  return { rate: 1 - Math.sign(drift) * Math.min(0.06, 0.02 + a * 0.08), correcting: true };
+}
+
+/* ---------- Sala: estado autoritativo ---------- */
+function colorFor(id) { return `hsl(${hueOf(id)} 65% 55%)`; }
+
+class Room {
+  constructor(opts = {}, rnd = Math.random) {
+    this.rnd = rnd;
+    this.hostId = opts.hostId || 'host';
+    this.settings = {
+      name: cleanStr(opts.name, 60) || 'Sessão local',
+      code: opts.code || genCode(),
+      visibility: opts.visibility === 'public' ? 'public' : 'private',
+      mode: opts.mode === 'collab' ? 'collab' : 'host',
+      guestsControl: !!opts.guestsControl,
+      fade: FADE_OPTIONS.includes(opts.fade) ? opts.fade : 5,
+    };
+    this.queue = []; this.index = -1; this.playing = false; this.pos = 0; this.anchor = 0; this.v = 0;
+    this.shuffle = false; this.repeat = 'off';
+    this.xf = null; this.pendingNext = null; this.played = new Set(); this.back = [];
+    this.members = new Map(); this.chat = [];
+  }
+
+  /* --- consultas --- */
+  cur() { return this.queue[this.index] || null; }
+  dur(t) { return t ? t.duration || 0 : 0; }
+  position(now) { return this.playing ? this.pos + Math.max(0, (now - this.anchor) / 1000) : this.pos; }
+  isHost(id) { return id === this.hostId; }
+  canControl(id) { return this.isHost(id) || (this.settings.mode === 'collab' && this.settings.guestsControl); }
+  canEnqueue(id) { return this.isHost(id) || this.settings.mode === 'collab'; }
+  indexOfQid(qid) { return this.queue.findIndex((q) => q.qid === qid); }
+
+  /* próximo índice (sem efeitos além de fixar o sorteio do shuffle) */
+  planNext() {
+    const n = this.queue.length; if (!n) return -1;
+    if (this.repeat === 'one') return this.index;
+    if (this.shuffle) {
+      const pi = this.pendingNext ? this.indexOfQid(this.pendingNext) : -1;
+      if (pi >= 0 && pi !== this.index) return pi;
+      let pool = []; for (let i = 0; i < n; i++) if (i !== this.index && !this.played.has(this.queue[i].qid)) pool.push(i);
+      if (!pool.length && this.repeat === 'all' && n > 1) {
+        this.played = new Set([this.queue[this.index].qid]);   // novo ciclo
+        for (let i = 0; i < n; i++) if (i !== this.index) pool.push(i);
+      }
+      if (!pool.length) return -1;
+      const pick = pool[Math.floor(this.rnd() * pool.length)];
+      this.pendingNext = this.queue[pick].qid; return pick;
+    }
+    if (this.index + 1 < n) return this.index + 1;
+    return this.repeat === 'all' ? 0 : -1;
+  }
+  effFade() {
+    const d = this.dur(this.cur()); let f = this.settings.fade;
+    if (d) f = Math.min(f, d / 2);
+    return f;
+  }
+  nextInfo() {
+    if (!this.playing) return null;
+    const t = this.cur(); const d = this.dur(t); if (!t || !d || this.repeat === 'one') return null;
+    const ni = this.planNext(); if (ni < 0) return null;
+    let fade = this.effFade();
+    let startAt = this.anchor + (d - fade - this.pos) * 1000;
+    if (startAt < this.anchor) { startAt = this.anchor; fade = Math.max(0, Math.min(fade, d - this.pos)); }
+    return { qid: this.queue[ni].qid, track: this.pubItem(this.queue[ni]), startAt, fade };
+  }
+
+  /* --- mutações --- */
+  goTo(idx, now, o = {}) {
+    const { auto = false, at = now, fade = 0, play = true, startPos = 0, noBack = false } = o;
+    const prev = this.cur();
+    if (prev && !noBack) { this.back.push(prev.qid); if (this.back.length > 50) this.back.shift(); }
+    this.index = idx; const t = this.cur();
+    this.played.add(t.qid);
+    this.pendingNext = null;
+    this.pos = startPos; this.playing = play;
+    this.anchor = auto ? at : now + (play ? LEAD_MS : 0);
+    this.xf = fade > 0 && prev ? { fade, from: prev.qid, start: this.anchor, until: this.anchor + fade * 1000, manual: !auto } : null;
+    this.v++;
+  }
+  tick(now) {
+    if (!this.playing || this.index < 0) return false;
+    const t = this.cur(); const d = this.dur(t); if (!d) return false;
+    const p = this.position(now);
+    if (this.repeat === 'one') {
+      if (p >= d) { this.pos = 0; this.anchor = now; this.xf = null; this.v++; return true; }
+      return false;
+    }
+    const ni = this.planNext();
+    if (ni < 0) { if (p >= d) { this.playing = false; this.pos = 0; this.xf = null; this.v++; return true; } return false; }
+    const info = this.nextInfo();
+    if (info && now >= info.startAt) { this.goTo(ni, now, { auto: true, at: info.startAt, fade: info.fade }); return true; }
+    return false;
+  }
+  _removeAt(i, now) {
+    const wasCur = i === this.index; const [it] = this.queue.splice(i, 1);
+    this.played.delete(it.qid); if (this.pendingNext === it.qid) this.pendingNext = null;
+    this.back = this.back.filter((q) => q !== it.qid);
+    if (i < this.index) this.index--;
+    else if (wasCur) {
+      if (!this.queue.length) { this.index = -1; this.playing = false; this.pos = 0; }
+      else { this.index = Math.min(i, this.queue.length - 1); this.pos = 0; this.pendingNext = null; this.anchor = now + (this.playing ? LEAD_MS : 0); this.xf = null; const c = this.cur(); this.played.add(c.qid); }
+    }
+    this.v++;
+  }
+  _reorderByVotes() {
+    if (this.shuffle) return;
+    const head = this.queue.slice(0, this.index + 1);
+    const up = this.queue.slice(this.index + 1).map((q, i) => ({ q, i }));
+    up.sort((a, b) => b.q.votes.size - a.q.votes.size || a.i - b.i);
+    this.queue = head.concat(up.map((x) => x.q));
+  }
+  _mkItem(track, by) {
+    const t = sanitizeTrack(track); if (!t) return null;
+    return { ...t, qid: rid(8), by, votes: new Set() };
+  }
+
+  apply(a, from, now) {
+    const fail = (err) => ({ ok: false, err });
+    const ok = () => ({ ok: true });
+    if (!a || typeof a !== 'object') return fail('Ação inválida.');
+    const ctl = this.canControl(from);
+    const NEED_CTL = 'Só o anfitrião controla a reprodução nesta sala.';
+    switch (a.type) {
+      case 'play': {
+        if (!ctl) return fail(NEED_CTL);
+        if (this.playing) return ok();
+        if (this.index < 0) { if (!this.queue.length) return fail('A fila está vazia.'); this.goTo(0, now); return ok(); }
+        this.playing = true; this.anchor = now + LEAD_MS; this.xf = null; this.v++; return ok();
+      }
+      case 'pause': {
+        if (!ctl) return fail(NEED_CTL);
+        if (!this.playing) return ok();
+        this.pos = this.position(now); this.playing = false; this.xf = null; this.v++; return ok();
+      }
+      case 'seek': {
+        if (!ctl) return fail(NEED_CTL);
+        if (this.index < 0) return fail('Nada tocando.');
+        const d = this.dur(this.cur());
+        this.pos = Math.max(0, Math.min(Number(a.pos) || 0, d ? Math.max(0, d - 0.5) : Infinity));
+        this.anchor = this.playing ? now + LEAD_MS : now; this.xf = null; this.v++; return ok();
+      }
+      case 'next': {
+        if (!ctl) return fail(NEED_CTL);
+        if (this.repeat === 'one' && this.index >= 0) { this.pos = 0; this.anchor = now + LEAD_MS; this.playing = true; this.xf = null; this.v++; return ok(); }
+        const ni = this.planNext(); if (ni < 0) return fail('Fim da fila.');
+        this.goTo(ni, now, { fade: this.playing ? (a.fade ?? MANUAL_FADE) : 0, play: true }); return ok();
+      }
+      case 'prev': {
+        if (!ctl) return fail(NEED_CTL);
+        if (this.index < 0) return fail('Nada tocando.');
+        let bi = -1;
+        if (this.position(now) <= 3) while (this.back.length) { bi = this.indexOfQid(this.back.pop()); if (bi >= 0) break; }
+        if (bi < 0) { this.pos = 0; this.anchor = this.playing ? now + LEAD_MS : now; this.xf = null; this.v++; return ok(); }
+        this.goTo(bi, now, { fade: this.playing ? MANUAL_FADE : 0, noBack: true, play: this.playing }); return ok();
+      }
+      case 'jump': {
+        if (!ctl) return fail(NEED_CTL);
+        const i = this.indexOfQid(a.qid); if (i < 0) return fail('Faixa não encontrada.');
+        this.goTo(i, now, { fade: this.playing ? MANUAL_FADE : 0, play: true }); return ok();
+      }
+      case 'setQueue': {
+        if (!ctl) return fail(NEED_CTL);
+        const items = (Array.isArray(a.tracks) ? a.tracks : []).slice(0, MAX_QUEUE).map((t) => this._mkItem(t, from)).filter(Boolean);
+        if (!items.length) return fail('Nenhuma faixa válida.');
+        const wasPlaying = this.playing && this.index >= 0;
+        this.queue = items; this.played = new Set(); this.back = []; this.pendingNext = null; this.index = -1;
+        const start = Math.max(0, Math.min(items.length - 1, a.start | 0));
+        if (a.shuffle !== undefined) this.shuffle = !!a.shuffle;
+        this.index = start; this.goTo(start, now, { noBack: true, play: true });
+        void wasPlaying; return ok();
+      }
+      case 'enqueue': {
+        if (!this.canEnqueue(from)) return fail('Só o anfitrião adiciona à fila nesta sala.');
+        if (this.queue.length >= MAX_QUEUE) return fail('Fila cheia.');
+        const it = this._mkItem(a.track, from); if (!it) return fail('Faixa inválida.');
+        const at = a.next && this.index >= 0 ? this.index + 1 : this.queue.length;
+        this.queue.splice(at, 0, it);
+        if (a.play && ctl) this.goTo(at, now, { fade: this.playing ? MANUAL_FADE : 0 });
+        else this.v++;
+        return { ok: true, qid: it.qid };
+      }
+      case 'remove': {
+        const i = this.indexOfQid(a.qid); if (i < 0) return fail('Faixa não encontrada.');
+        if (!(ctl || this.queue[i].by === from)) return fail('Sem permissão para remover essa faixa.');
+        this._removeAt(i, now); return ok();
+      }
+      case 'move': {
+        if (!ctl) return fail(NEED_CTL);
+        const i = this.indexOfQid(a.qid); if (i < 0) return fail('Faixa não encontrada.');
+        const curQid = this.cur() && this.cur().qid;
+        const [it] = this.queue.splice(i, 1);
+        this.queue.splice(Math.max(0, Math.min(this.queue.length, a.to | 0)), 0, it);
+        if (curQid) this.index = this.indexOfQid(curQid);
+        this.pendingNext = null; this.v++; return ok();
+      }
+      case 'clearQueue': {
+        if (!ctl) return fail(NEED_CTL);
+        this.queue = this.queue.slice(0, this.index + 1); this.pendingNext = null; this.v++; return ok();
+      }
+      case 'vote': {
+        if (this.settings.mode !== 'collab') return fail('Votação só existe em salas colaborativas.');
+        const i = this.indexOfQid(a.qid); if (i < 0 || i <= this.index) return fail('Só dá para votar nas próximas faixas.');
+        const set = this.queue[i].votes;
+        if (set.has(from)) set.delete(from); else set.add(from);
+        this._reorderByVotes(); this.pendingNext = null; this.v++; return ok();
+      }
+      case 'shuffle': {
+        if (!ctl) return fail(NEED_CTL);
+        this.shuffle = !!a.on; this.pendingNext = null; this.v++; return ok();
+      }
+      case 'repeat': {
+        if (!ctl) return fail(NEED_CTL);
+        this.repeat = ['off', 'all', 'one'].includes(a.mode) ? a.mode : 'off'; this.pendingNext = null; this.v++; return ok();
+      }
+      case 'dur': {
+        if (!this.isHost(from)) return fail('Só o anfitrião informa durações.');   // evita que convidados envenenem o agendamento
+        const d = num(a.d, 0, 86400 * 3); if (!(d > 1)) return fail('Duração inválida.');
+        let changed = false;
+        for (const q of this.queue) if (q.id === a.id && !q.duration) { q.duration = d; changed = true; }
+        if (changed) this.v++;
+        return { ok: true, changed };
+      }
+      case 'settings': {
+        if (!this.isHost(from)) return fail('Só o anfitrião altera as configurações.');
+        const s = a.patch || {};
+        if (s.name !== undefined) this.settings.name = cleanStr(s.name, 60) || this.settings.name;
+        if (s.visibility !== undefined) this.settings.visibility = s.visibility === 'public' ? 'public' : 'private';
+        if (s.mode !== undefined) this.settings.mode = s.mode === 'collab' ? 'collab' : 'host';
+        if (s.guestsControl !== undefined) this.settings.guestsControl = !!s.guestsControl;
+        if (this.settings.mode === 'host') this.settings.guestsControl = false;
+        if (s.fade !== undefined && FADE_OPTIONS.includes(Number(s.fade))) this.settings.fade = Number(s.fade);
+        this.v++; return ok();
+      }
+      default: return fail('Ação desconhecida.');
+    }
+  }
+
+  /* --- participantes e chat --- */
+  addMember(id, name) {
+    let m = this.members.get(id);
+    if (!m) { m = { id, name: cleanStr(name, 24) || 'Convidado', color: colorFor(id), online: true, ready: 'loading', drift: 0, rtt: null, joinedAt: Date.now() }; this.members.set(id, m); }
+    else { m.online = true; if (name) m.name = cleanStr(name, 24) || m.name; }
+    return m;
+  }
+  setStatus(id, st) {
+    const m = this.members.get(id); if (!m) return;
+    if (['ok', 'loading', 'blocked', 'error'].includes(st.ready)) m.ready = st.ready;
+    if (isFinite(st.drift)) m.drift = Math.round(st.drift);
+    if (isFinite(st.rtt)) m.rtt = Math.round(st.rtt);
+  }
+  membersList() {
+    return [...this.members.values()].map((m) => ({ ...m, host: m.id === this.hostId }));
+  }
+  addChat(from, text, now) {
+    text = cleanStr(text, 300); if (!text) return null;
+    const m = this.members.get(from);
+    const msg = { id: rid(6), from, name: m ? m.name : '?', color: m ? m.color : '#888', text, ts: now };
+    this.chat.push(msg); if (this.chat.length > 100) this.chat.shift();
+    return msg;
+  }
+
+  /* --- serialização --- */
+  pubItem(q) {
+    return { qid: q.qid, id: q.id, source: q.source, sourceId: q.sourceId, url: q.url, title: q.title, artist: q.artist, album: q.album, cover: q.cover, duration: q.duration, by: q.by, votes: [...q.votes] };
+  }
+  snapshot(now) {
+    return {
+      v: this.v, serverNow: now, settings: { ...this.settings }, hostId: this.hostId,
+      queue: this.queue.map((q) => this.pubItem(q)), index: this.index,
+      playing: this.playing, pos: this.pos, anchor: this.anchor,
+      shuffle: this.shuffle, repeat: this.repeat, next: this.nextInfo(), xf: this.xf,
+    };
+  }
+  heartbeat(now) {
+    const c = this.cur();
+    return { v: this.v, serverNow: now, qid: c ? c.qid : null, playing: this.playing, pos: this.pos, anchor: this.anchor, next: this.nextInfo(), xf: this.xf };
+  }
+}
+
+const api = { LEAD_MS, MANUAL_FADE, FADE_OPTIONS, MAX_QUEUE, rid, genCode, normCode, cleanStr, fmtTime, hash32, hueOf, colorFor,
+  safeHttpUrl, safeCover, sanitizeTrack, identifyUrl, parseYouTubeId, parseId3, ClockSync, driftAction, Room };
+if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.STCore = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>/* SyncTube Music — persistência: IndexedDB (com fallback em memória) */
+(function (root) {
+'use strict';
+
+const STORES = ['tracks', 'playlists', 'history', 'kv'];
+const mem = { tracks: new Map(), playlists: new Map(), history: new Map(), kv: new Map() };
+const KEYPATH = { tracks: 'id', playlists: 'id', history: 'at' };
+let dbp = null, useMem = false;
+
+function open() {
+  if (dbp) return dbp;
+  dbp = new Promise((res) => {
+    if (!root.indexedDB) { useMem = true; return res(null); }
+    let r; try { r = root.indexedDB.open('synctube', 1); } catch { useMem = true; return res(null); }
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      d.createObjectStore('tracks', { keyPath: 'id' }); d.createObjectStore('playlists', { keyPath: 'id' });
+      d.createObjectStore('history', { keyPath: 'at' }); d.createObjectStore('kv');
+    };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => { useMem = true; res(null); };
+    r.onblocked = () => { useMem = true; res(null); };
+  });
+  return dbp;
+}
+function run(store, mode, fn) {
+  return open().then((db) => new Promise((res, rej) => {
+    const t = db.transaction(store, mode); const s = t.objectStore(store); let req;
+    try { req = fn(s); } catch (e) { return rej(e); }
+    t.oncomplete = () => res(req ? req.result : undefined);
+    t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  }));
+}
+const DB = {
+  get persistent() { return !useMem; },
+  async init() {
+    await open();
+    if (root.navigator && navigator.storage && navigator.storage.persist) { try { await navigator.storage.persist(); } catch {} }
+    return !useMem;
+  },
+  async getAll(store) { await open(); if (useMem) return [...mem[store].values()].map((x) => JSON.parse(JSON.stringify(x))); return run(store, 'readonly', (s) => s.getAll()); },
+  async put(store, obj) { await open(); if (useMem) { mem[store].set(obj[KEYPATH[store]], JSON.parse(JSON.stringify(obj))); return; } return run(store, 'readwrite', (s) => s.put(obj)); },
+  async putMany(store, arr) { await open(); if (useMem) { arr.forEach((o) => mem[store].set(o[KEYPATH[store]], JSON.parse(JSON.stringify(o)))); return; } return run(store, 'readwrite', (s) => { let r; arr.forEach((o) => { r = s.put(o); }); return r; }); },
+  async del(store, key) { await open(); if (useMem) { mem[store].delete(key); return; } return run(store, 'readwrite', (s) => s.delete(key)); },
+  async clear(store) { await open(); if (useMem) { mem[store].clear(); return; } return run(store, 'readwrite', (s) => s.clear()); },
+  async kvGet(k, dflt) { await open(); const v = useMem ? mem.kv.get(k) : await run('kv', 'readonly', (s) => s.get(k)); return v === undefined ? dflt : v; },
+  async kvSet(k, v) { await open(); if (useMem) { mem.kv.set(k, v); return; } return run('kv', 'readwrite', (s) => s.put(v, k)); },
+};
+root.STStore = DB;
+if (typeof module !== 'undefined' && module.exports) module.exports = DB;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>/* SyncTube Music — motor de reprodução: dois decks + crossfade (Web Audio) + adaptadores de fonte */
+(function (root) {
+'use strict';
+
+const CANCELLED = 'cancelado';
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+
+/* curva de ganho: potência igual (soma de potências constante) ou linear */
+function curveValue(from, to, p, type) {
+  if (type === 'linear') return from + (to - from) * p;
+  return to > from ? from + (to - from) * Math.sin(p * Math.PI / 2) : to + (from - to) * Math.cos(p * Math.PI / 2);
+}
+function curveArray(from, to, type, n = 64) {
+  const a = new Float32Array(n); for (let i = 0; i < n; i++) a[i] = curveValue(from, to, i / (n - 1), type); return a;
+}
+
+/* ======================= Deck: áudio direto ======================= */
+class DirectDeck {
+  constructor(engine) {
+    this.engine = engine; this.kind = 'direct'; this.el = null; this.srcNode = null;
+    this.gain = engine.ctx.createGain(); this.gain.connect(engine.master);
+    this.track = null; this.g = 1; this.master = 1; this.wa = false; this.timer = null; this.tok = 0;
+    this.startLatency = 0; this.fineRate = true;
+  }
+  _newEl(cors) { const el = new Audio(); el.preload = 'auto'; if (cors) el.crossOrigin = 'anonymous'; return el; }
+  _wait(el, url, tok, ms = 20000) {
+    return new Promise((res, rej) => {
+      let done = false;
+      const fin = (f, v) => { if (done) return; done = true; clearTimeout(to); el.removeEventListener('canplay', ok); el.removeEventListener('error', er); f(v); };
+      const ok = () => fin(res), er = () => fin(rej, new Error('erro de mídia'));
+      const to = setTimeout(() => fin(rej, new Error('tempo esgotado')), ms);
+      el.addEventListener('canplay', ok); el.addEventListener('error', er);
+      el.src = url; try { el.load(); } catch {}
+    });
+  }
+  async load(track) {
+    this._dispose(); const tok = ++this.tok; this.track = track;
+    let el = this._newEl(true), wa = true;
+    try { await this._wait(el, track.url, tok); }
+    catch (e1) {
+      if (tok !== this.tok) throw new Error(CANCELLED);
+      el.removeAttribute('src'); try { el.load(); } catch {}
+      el = this._newEl(false); wa = false;   // servidor sem CORS: toca, mas o fade usa element.volume
+      try { await this._wait(el, track.url, tok); } catch (e2) { throw new Error(tok !== this.tok ? CANCELLED : 'Não foi possível carregar o áudio deste link.'); }
+    }
+    if (tok !== this.tok) { el.removeAttribute('src'); throw new Error(CANCELLED); }
+    this.el = el; this.wa = wa;
+    if (wa) { this.srcNode = this.engine.ctx.createMediaElementSource(el); this.srcNode.connect(this.gain); }
+    this._applyGain();
+  }
+  _applyGain() {
+    if (!this.el) return;
+    if (this.wa) { const t = this.engine.ctx.currentTime, gp = this.gain.gain; gp.cancelScheduledValues(t); gp.setValueAtTime(this.g, t); }
+    else this.el.volume = clamp01(this.g * this.master);
+  }
+  _stopRamp() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
+  setGainNow(g) { this._stopRamp(); this.g = g; this._applyGain(); }
+  setMaster(m) { this.master = m; if (!this.wa && this.el) this.el.volume = clamp01(this.g * m); }
+  rampTo(target, secs, curve = 'equal') {
+    this._stopRamp(); const from = this.g; this.g = target;
+    if (!this.el) return;
+    if (secs <= 0.01) { this._applyGain(); return; }
+    if (this.wa) {
+      const ctx = this.engine.ctx, t = ctx.currentTime, gp = this.gain.gain;
+      gp.cancelScheduledValues(t); gp.setValueAtTime(from, t); gp.setValueCurveAtTime(curveArray(from, target, curve), t, secs);
+    } else {
+      const t0 = performance.now();
+      this.timer = setInterval(() => {
+        const p = Math.min(1, (performance.now() - t0) / (secs * 1000));
+        if (this.el) this.el.volume = clamp01(curveValue(from, target, p, curve) * this.master);
+        if (p >= 1) this._stopRamp();
+      }, 30);
+    }
+  }
+  currentGain() { return this.wa ? this.gain.gain.value : (this.el ? this.el.volume / (this.master || 1) : 0); }
+  async play() {
+    if (!this.el) return;
+    try { await this.el.play(); } catch (e) { if (e && e.name === 'NotAllowedError') this.engine._blocked(); else if (!(e && e.name === 'AbortError')) throw e; }
+  }
+  pause() { if (this.el) this.el.pause(); }
+  seek(t) { if (this.el) { try { this.el.currentTime = Math.max(0, t); } catch {} } }
+  time() { return this.el ? this.el.currentTime : 0; }
+  duration() { const d = this.el && this.el.duration; return isFinite(d) ? d : 0; }
+  isPlaying() { return !!this.el && !this.el.paused && !this.el.ended; }
+  isBuffering() { return !!this.el && !this.el.paused && this.el.readyState < 3; }
+  setRate(r) { if (this.el && Math.abs(this.el.playbackRate - r) > 1e-4) this.el.playbackRate = r; }
+  _dispose() {
+    this._stopRamp();
+    if (this.el) { try { this.el.pause(); } catch {} this.el.removeAttribute('src'); try { this.el.load(); } catch {} }
+    if (this.srcNode) { try { this.srcNode.disconnect(); } catch {} }
+    this.el = null; this.srcNode = null;
+  }
+  release() { this.tok++; this._dispose(); this.track = null; }
+}
+
+/* ======================= Deck: YouTube (IFrame API oficial) ======================= */
+let ytApi = null;
+function loadYT() {
+  if (root.YT && root.YT.Player) return Promise.resolve();
+  if (ytApi) return ytApi;
+  ytApi = new Promise((res, rej) => {
+    const prev = root.onYouTubeIframeAPIReady;
+    root.onYouTubeIframeAPIReady = () => { if (prev) prev(); res(); };
+    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api';
+    s.onerror = () => { ytApi = null; rej(new Error('Não foi possível carregar a API do YouTube (sem internet ou bloqueada).')); };
+    document.head.appendChild(s);
+    setTimeout(() => { if (!(root.YT && root.YT.Player)) { ytApi = null; rej(new Error('Tempo esgotado carregando a API do YouTube.')); } }, 15000);
+  });
+  return ytApi;
+}
+function ytErr(code) {
+  return ({
+    2: 'ID de vídeo inválido.', 5: 'Erro no player HTML5 do YouTube.', 100: 'Vídeo removido ou privado.',
+    101: 'O dono do vídeo não permite reprodução incorporada.', 150: 'O dono do vídeo não permite reprodução incorporada.',
+    153: 'O YouTube recusou por falta de origem do site. Abra o app por http(s) (servidor local ou hospedagem), não direto do arquivo.',
+  })[code] || 'Erro do YouTube (' + code + ').';
+}
+class YouTubeDeck {
+  constructor(engine, host) {
+    this.engine = engine; this.kind = 'youtube'; this.host = host; this.p = null; this.track = null;
+    this.g = 1; this.master = 1; this.startLatency = 450; this.fineRate = false; this.timer = null; this.tok = 0;
+    this.ready = false; this._pw = null; this._pending = null;
+    this.wrap = document.createElement('div'); this.wrap.className = 'yt-deck'; host.appendChild(this.wrap);
+  }
+  async load(track) {
+    this._stopRamp(); const tok = ++this.tok; this.track = track;
+    await loadYT(); if (tok !== this.tok) throw new Error(CANCELLED);
+    await new Promise((res, rej) => {
+      const timeout = setTimeout(() => { this._pending = null; rej(new Error('Tempo esgotado ao carregar o vídeo do YouTube.')); }, 20000);
+      this._pending = { res: () => { clearTimeout(timeout); this._pending = null; res(); }, rej: (e) => { clearTimeout(timeout); this._pending = null; rej(e); }, tok };
+      if (!this.p) {
+        const div = document.createElement('div'); this.wrap.appendChild(div);
+        const vars = { controls: 0, disablekb: 1, fs: 0, modestbranding: 1, playsinline: 1, rel: 0, iv_load_policy: 3 };
+        if (/^https?:$/.test(location.protocol)) vars.origin = location.origin;
+        this.p = new root.YT.Player(div, { width: '100%', height: '100%', videoId: track.sourceId, playerVars: vars,
+          events: { onReady: () => { this.ready = true; this._cued(); }, onStateChange: (e) => this._state(e.data), onError: (e) => this._error(e.data) } });
+      } else if (this.ready) { this.p.cueVideoById(track.sourceId); setTimeout(() => this._cued(), 1800); }
+    });
+    if (tok !== this.tok) throw new Error(CANCELLED);
+    this.setGainNow(1);
+  }
+  _cued() { if (this._pending) this._pending.res(); }
+  _error(code) { const m = new Error(ytErr(code)); if (this._pending) this._pending.rej(m); else this.engine._error(this.track, m); }
+  _state(s) {
+    if (s === 5 && this._pending) this._pending.res();
+    if (s === 1 && this._pw) { const f = this._pw; this._pw = null; f(); }
+  }
+  _vol() { return Math.round(clamp01(this.g * this.master) * 100); }
+  _stopRamp() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
+  setGainNow(g) { this._stopRamp(); this.g = g; if (this.ready) this.p.setVolume(this._vol()); }
+  setMaster(m) { this.master = m; if (this.ready) this.p.setVolume(this._vol()); }
+  rampTo(target, secs, curve = 'equal') {
+    this._stopRamp(); const from = this.g; this.g = target;
+    if (secs <= 0.01) { if (this.ready) this.p.setVolume(this._vol()); return; }
+    const t0 = performance.now();
+    this.timer = setInterval(() => {
+      const p = Math.min(1, (performance.now() - t0) / (secs * 1000));
+      if (this.ready) this.p.setVolume(Math.round(clamp01(curveValue(from, target, p, curve) * this.master) * 100));
+      if (p >= 1) this._stopRamp();
+    }, 40);
+  }
+  currentGain() { return this.ready ? this.p.getVolume() / 100 / (this.master || 1) : 0; }
+  play() {
+    return new Promise((res) => {
+      if (!this.ready) return res();
+      if (this.isPlaying()) return res();
+      const t0 = performance.now();
+      const to = setTimeout(() => { this._pw = null; if (this.p.getPlayerState() !== 1) this.engine._blocked(); res(); }, 5000);
+      this._pw = () => { clearTimeout(to); this.startLatency = 0.6 * this.startLatency + 0.4 * (performance.now() - t0); res(); };
+      this.p.playVideo();
+    });
+  }
+  pause() { if (this.ready) this.p.pauseVideo(); }
+  seek(t) { if (this.ready) this.p.seekTo(Math.max(0, t), true); }
+  time() { return this.ready ? this.p.getCurrentTime() || 0 : 0; }
+  duration() { return this.ready ? this.p.getDuration() || 0 : 0; }
+  isPlaying() { if (!this.ready) return false; const s = this.p.getPlayerState(); return s === 1 || s === 3; }
+  isBuffering() { return this.ready && this.p.getPlayerState() === 3; }
+  setRate() {}
+  setQuality(q) { if (this.ready && this.p.setPlaybackQuality) this.p.setPlaybackQuality(q); }
+  release() {
+    this.tok++; this._stopRamp(); if (this._pending) this._pending.rej(new Error(CANCELLED));
+    if (this.ready) { try { this.p.pauseVideo(); } catch {} }
+    this.track = null;
+  }
+}
+
+/* ======================= Engine ======================= */
+class Engine {
+  constructor(opts = {}) {
+    this.ytHost = opts.ytHost || null;
+    const AC = root.AudioContext || root.webkitAudioContext;
+    this.ctx = new AC({ latencyHint: 'playback' });
+    this.master = this.ctx.createGain(); this.master.connect(this.ctx.destination);
+    this.pool = { direct: [], youtube: [] };
+    this.active = null; this.next = null; this.fading = new Set();
+    this.vol = 1; this.tok = 0; this.curve = 'equal'; this.quality = 'default';
+    this.qid = null;                         // qid da faixa ativa ou em carregamento
+    this.xf = null;                          // {start, fade}
+    this.cb = {};                            // onDuration, onError, onBlocked, onCrossfade, onActiveKind
+  }
+  _blocked() { if (this.cb.onBlocked) this.cb.onBlocked(); }
+  _error(track, err) { if (this.cb.onError) this.cb.onError(track, err); }
+  resume() { return this.ctx.state === 'running' ? Promise.resolve() : this.ctx.resume().catch(() => {}); }
+  setVolume(v) {
+    this.vol = v * v;                         // curva perceptual simples
+    this.master.gain.value = this.vol;
+    for (const k of Object.keys(this.pool)) for (const d of this.pool[k]) d.setMaster(this.vol);
+  }
+  setQuality(q) { this.quality = q; for (const d of this.pool.youtube) d.setQuality && d.setQuality(q); }
+  _busy(d) { return (this.active && this.active.deck === d) || (this.next && this.next.deck === d) || this.fading.has(d); }
+  acquire(track) {
+    const kind = track.source === 'youtube' ? 'youtube' : 'direct';
+    let d = this.pool[kind].find((x) => !this._busy(x));
+    if (!d) { d = kind === 'direct' ? new DirectDeck(this) : new YouTubeDeck(this, this.ytHost); d.setMaster(this.vol); this.pool[kind].push(d); }
+    return d;
+  }
+  _dropNext() { if (this.next) { const n = this.next; this.next = null; n.deck.release(); n.promise.catch(() => {}); } }
+  _showDeck(deck) {
+    for (const d of this.pool.youtube) d.wrap.classList.toggle('on', d === deck);
+    if (this.cb.onActiveKind) this.cb.onActiveKind(deck.kind);
+  }
+  _reportDuration(deck, track) {
+    let tries = 0;
+    const poll = () => {
+      if (deck.track !== track) return;
+      const d = deck.duration();
+      if (d > 1) { if (this.cb.onDuration) this.cb.onDuration(track, d); return; }
+      if (++tries < 40) setTimeout(poll, 300);
+    };
+    poll();
+  }
+  finishFade() {
+    for (const d of [...this.fading]) { d.pause(); d.release(); this.fading.delete(d); }
+    if (this.active) this.active.deck.setGainNow(1);
+    this.xf = null;
+  }
+
+  preload(track) {
+    if (this.active && this.active.track.qid === track.qid) return Promise.resolve();
+    if (this.next && this.next.track.qid === track.qid) return this.next.promise;
+    this._dropNext();
+    const deck = this.acquire(track);
+    const promise = deck.load(track).then(() => this._reportDuration(deck, track));
+    promise.catch(() => {});
+    this.next = { deck, track, promise };
+    return promise;
+  }
+
+  /* troca dura: carrega no deck livre e só então corta o antigo */
+  async setTrack(track, o = {}) {
+    const tok = ++this.tok; this.qid = track.qid;
+    this.finishFade();
+    let deck, nx = this.next;
+    if (nx && nx.track.qid === track.qid) { deck = nx.deck; this.next = null; try { await nx.promise; } catch (e) { deck.release(); if (tok !== this.tok) return; throw e; } }
+    else { this._dropNext(); deck = this.acquire(track); try { await deck.load(track); } catch (e) { deck.release(); if (tok !== this.tok) return; throw e; } this._reportDuration(deck, track); }
+    if (tok !== this.tok) { deck.release(); return; }
+    const old = this.active;
+    deck.setGainNow(o.fadeIn > 0 ? 0 : 1);
+    if (o.pos > 0) deck.seek(o.pos);
+    if (old && old.deck !== deck) { old.deck.pause(); old.deck.release(); }
+    this.active = { deck, track }; this._showDeck(deck);
+    if (this.quality !== 'default' && deck.setQuality) deck.setQuality(this.quality);
+    if (o.play) {
+      await deck.play(); if (tok !== this.tok) return;
+      if (o.fadeIn > 0) deck.rampTo(1, o.fadeIn, this.curve);
+    }
+  }
+
+  /* crossfade: as duas faixas tocam juntas; saída e entrada com potência igual */
+  async crossfadeTo(track, fade, o = {}) {
+    const tok = ++this.tok; this.qid = track.qid; const curve = o.curve || this.curve;
+    let n = this.next && this.next.track.qid === track.qid ? this.next : null;
+    if (!n) { this.preload(track); n = this.next; }
+    try { await Promise.race([n.promise, new Promise((_, rej) => setTimeout(() => rej(new Error('lento')), 3000))]); }
+    catch (e) { if (tok !== this.tok) return; return this.setTrack(track, { pos: o.pos || 0, play: true }); }
+    if (tok !== this.tok) return;
+    const deck = n.deck; this.next = null; const old = this.active;
+    deck.setGainNow(0); if (o.pos > 0) deck.seek(o.pos);
+    await deck.play();
+    if (tok !== this.tok) { deck.pause(); deck.release(); return; }
+    deck.rampTo(1, fade, curve);
+    if (old && old.deck !== deck) {
+      const od = old.deck; od.rampTo(0, fade, curve); this.fading.add(od);
+      setTimeout(() => { if (this.fading.has(od)) { od.pause(); od.release(); this.fading.delete(od); } }, fade * 1000 + 150);
+    }
+    this.active = { deck, track }; this._showDeck(deck);
+    this.xf = { start: performance.now(), fade };
+    if (this.cb.onCrossfade) this.cb.onCrossfade({ fade, track });
+  }
+
+  setPlaying(on) {
+    if (!this.active) return Promise.resolve();
+    if (on) { this.resume(); return this.active.deck.play(); }
+    this.finishFade(); this.active.deck.pause(); return Promise.resolve();
+  }
+  seek(t) { if (this.active) { this.finishFade(); this.active.deck.seek(t); } }
+  setRate(r) { if (this.active) this.active.deck.setRate(r); }
+  fineRate() { return !this.active || this.active.deck.fineRate; }
+  startLatency(track) { const k = track.source === 'youtube' ? this.pool.youtube : this.pool.direct; return k.length ? Math.max(...k.map((d) => d.startLatency)) : (track.source === 'youtube' ? 450 : 0); }
+  getTime() { return this.active ? this.active.deck.time() : 0; }
+  getDuration() { return this.active ? this.active.deck.duration() : 0; }
+  isPlaying() { return !!this.active && this.active.deck.isPlaying(); }
+  isBuffering() { return !!this.active && this.active.deck.isBuffering(); }
+  stop() {
+    this.tok++; this.qid = null; this.finishFade(); this._dropNext();
+    if (this.active) { this.active.deck.pause(); this.active.deck.release(); this.active = null; }
+  }
+  /* diagnóstico (usado nos testes): ganhos atuais dos decks audíveis */
+  debug() {
+    return { active: this.active && { qid: this.active.track.qid, gain: this.active.deck.currentGain(), t: this.active.deck.time(), playing: this.active.deck.isPlaying(), wa: this.active.deck.wa },
+      fading: [...this.fading].map((d) => ({ qid: d.track && d.track.qid, gain: d.currentGain(), t: d.time(), playing: d.isPlaying() })), next: this.next && this.next.track.qid, xf: this.xf };
+  }
+}
+
+/* ---------- sonda de metadados de fontes (usada ao adicionar músicas) ---------- */
+const Sources = {
+  async probeDirect(url) {
+    // 1) tenta ler o início do arquivo (ID3 + prova de CORS); 2) carrega só os metadados via <audio>
+    const out = { corsOk: false, meta: null, duration: 0 };
+    try {
+      const r = await fetch(url, { headers: { Range: 'bytes=0-399999' } });
+      if (r.ok || r.status === 206) { out.corsOk = true; out.meta = root.STCore.parseId3(await r.arrayBuffer()); }
+    } catch {}
+    out.duration = await new Promise((res, rej) => {
+      const a = new Audio(); a.preload = 'metadata'; if (out.corsOk) a.crossOrigin = 'anonymous';
+      const to = setTimeout(() => { a.src = ''; rej(new Error('O servidor demorou demais para responder.')); }, 15000);
+      a.onloadedmetadata = () => { clearTimeout(to); res(isFinite(a.duration) ? a.duration : 0); a.src = ''; };
+      a.onerror = () => { clearTimeout(to); rej(new Error('O link não pôde ser carregado como áudio (formato não suportado, link expirado ou acesso bloqueado).')); };
+      a.src = url;
+    });
+    return out;
+  },
+  async probeYouTube(id) {
+    const url = 'https://www.youtube.com/watch?v=' + id;
+    const r = await fetch('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent(url));
+    if (r.status === 401 || r.status === 403) throw new Error('O dono do vídeo não permite incorporação (ou o vídeo é privado).');
+    if (r.status === 404) throw new Error('Vídeo não encontrado.');
+    if (!r.ok) throw new Error('Não consegui consultar o YouTube (' + r.status + ').');
+    const j = await r.json();
+    return { title: j.title, artist: (j.author_name || '').replace(/ - Topic$/, ''), cover: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg' };
+  },
+};
+
+root.STEngine = { Engine, Sources, DirectDeck, YouTubeDeck, curveValue, curveArray };
+if (typeof module !== 'undefined' && module.exports) module.exports = root.STEngine;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>/* SyncTube Music — transportes de tempo real.
+   Interface Conn: { id, send(obj), close(), onmessage(obj), onclose(), open }
+   - 'local': BroadcastChannel (abas do mesmo navegador; sem internet)
+   - 'peer' : WebRTC via PeerJS (sinalização pública do PeerJS; dados vão direto entre os navegadores)
+   Para trocar por WebSocket/Socket.IO/Supabase Realtime, basta implementar o mesmo par listen()/connect(). */
+(function (root) {
+'use strict';
+
+class Conn {
+  constructor(id) { this.id = id; this.onmessage = null; this.onclose = null; this.open = true; }
+  send() {} close() {}
+}
+
+/* ---------- local (BroadcastChannel) ---------- */
+const LOCAL = {
+  async listen(code, onConn) {
+    if (!root.BroadcastChannel) throw new Error('Este navegador não suporta BroadcastChannel.');
+    const ch = new BroadcastChannel('synctube-' + code); const conns = new Map();
+    const mk = (cid) => {
+      const c = new Conn(cid);
+      c.send = (o) => { if (c.open) ch.postMessage({ to: cid, from: 'host', d: JSON.stringify(o) }); };
+      c.close = () => { if (!c.open) return; c.open = false; conns.delete(cid); try { ch.postMessage({ to: cid, from: 'host', bye: 1 }); } catch {} if (c.onclose) c.onclose(); };
+      return c;
+    };
+    ch.onmessage = (e) => {
+      const m = e.data || {};
+      if (m.t === 'connect') {
+        const old = conns.get(m.cid); if (old) { old.open = false; if (old.onclose) old.onclose(); }
+        const c = mk(m.cid); conns.set(m.cid, c); ch.postMessage({ t: 'accept', to: m.cid }); onConn(c);
+      } else if (m.to === 'host') {
+        const c = conns.get(m.from); if (!c) return;
+        if (m.bye) { c.open = false; conns.delete(m.from); if (c.onclose) c.onclose(); }
+        else if (m.d && c.onmessage) { try { c.onmessage(JSON.parse(m.d)); } catch (err) { console.warn(err); } }
+      }
+    };
+    return { kind: 'local', close() { for (const c of [...conns.values()]) { c.open = false; try { ch.postMessage({ to: c.id, from: 'host', bye: 1 }); } catch {} } ch.close(); } };
+  },
+  connect(code, cid, timeout = 900) {
+    return new Promise((res, rej) => {
+      if (!root.BroadcastChannel) return rej(new Error('not-found'));
+      const ch = new BroadcastChannel('synctube-' + code); const c = new Conn(cid); let accepted = false;
+      const to = setTimeout(() => { if (!accepted) { ch.close(); rej(new Error('not-found')); } }, timeout);
+      c.send = (o) => { if (c.open) ch.postMessage({ to: 'host', from: cid, d: JSON.stringify(o) }); };
+      c.close = () => { if (!c.open) return; c.open = false; try { ch.postMessage({ to: 'host', from: cid, bye: 1 }); } catch {} ch.close(); };
+      ch.onmessage = (e) => {
+        const m = e.data || {};
+        if (m.t === 'accept' && m.to === cid) { accepted = true; clearTimeout(to); res(c); }
+        else if (m.to === cid) {
+          if (m.bye) { c.open = false; ch.close(); if (c.onclose) c.onclose(); }
+          else if (m.d && c.onmessage) { try { c.onmessage(JSON.parse(m.d)); } catch (err) { console.warn(err); } }
+        }
+      };
+      ch.postMessage({ t: 'connect', cid });
+    });
+  },
+};
+
+/* ---------- online (WebRTC via PeerJS) ---------- */
+let peerLib = null;
+function loadPeerJS() {
+  if (root.Peer) return Promise.resolve();
+  if (peerLib) return peerLib;
+  const urls = ['https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js', 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];
+  peerLib = (async () => {
+    for (const u of urls) {
+      const ok = await new Promise((res) => { const s = document.createElement('script'); s.src = u; s.onload = () => res(true); s.onerror = () => { s.remove(); res(false); }; document.head.appendChild(s); });
+      if (ok && root.Peer) return;
+    }
+    peerLib = null; throw new Error('Não foi possível carregar a biblioteca de conexão online (PeerJS). Verifique a internet.');
+  })();
+  return peerLib;
+}
+const PEER = {
+  async listen(code, onConn) {
+    await loadPeerJS();
+    const peer = new root.Peer('stm-' + code.toLowerCase());
+    await new Promise((res, rej) => { peer.on('open', res); peer.on('error', (e) => rej(e.type === 'unavailable-id' ? new Error('code-in-use') : new Error('Falha na conexão online: ' + (e.type || e.message)))); });
+    peer.on('error', (e) => console.warn('peer', e.type));
+    peer.on('disconnected', () => { try { peer.reconnect(); } catch {} });
+    peer.on('connection', (dc) => {
+      const c = new Conn(dc.peer);
+      c.send = (o) => { if (dc.open) dc.send(o); };
+      c.close = () => { try { dc.close(); } catch {} };
+      dc.on('data', (d) => { if (c.onmessage) c.onmessage(d); });
+      dc.on('close', () => { c.open = false; if (c.onclose) c.onclose(); });
+      dc.on('error', () => {});
+      dc.on('open', () => onConn(c));
+    });
+    return { kind: 'peer', close() { try { peer.destroy(); } catch {} } };
+  },
+  async connect(code, cid, timeout = 12000) {
+    await loadPeerJS();
+    const peer = new root.Peer();
+    return new Promise((res, rej) => {
+      const to = setTimeout(() => { try { peer.destroy(); } catch {} rej(new Error('timeout')); }, timeout);
+      peer.on('error', (e) => { clearTimeout(to); try { peer.destroy(); } catch {} rej(new Error(e.type === 'peer-unavailable' ? 'not-found' : (e.type || 'erro'))); });
+      peer.on('open', () => {
+        const dc = peer.connect('stm-' + code.toLowerCase(), { serialization: 'json', reliable: true });
+        dc.on('open', () => {
+          clearTimeout(to);
+          const c = new Conn(cid);
+          c.send = (o) => { if (dc.open) dc.send(o); };
+          c.close = () => { try { dc.close(); } catch {} try { peer.destroy(); } catch {} };
+          dc.on('data', (d) => { if (c.onmessage) c.onmessage(d); });
+          dc.on('close', () => { c.open = false; if (c.onclose) c.onclose(); try { peer.destroy(); } catch {} });
+          res(c);
+        });
+      });
+    });
+  },
+};
+
+const Net = {
+  async listen(kind, code, onConn) { return (kind === 'local' ? LOCAL : PEER).listen(code, onConn); },
+  /* tenta primeiro o canal local (instantâneo) e depois a rede online */
+  async connectAny(code, cid, { allowPeer = true } = {}) {
+    try { return await LOCAL.connect(code, cid); } catch (e) { if (e.message !== 'not-found') throw e; }
+    if (!allowPeer) throw new Error('not-found');
+    return PEER.connect(code, cid);
+  },
+  LOCAL, PEER,
+};
+root.STNet = Net;
+if (typeof module !== 'undefined' && module.exports) module.exports = Net;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>/* SyncTube Music — sessões: Follower (segue o estado), HostSession (servidor da sala), GuestSession */
+(function (root) {
+'use strict';
+const { Room, ClockSync, driftAction, genCode, cleanStr, rid } = root.STCore;
+
+/* =====================================================================
+   Follower: faz o Engine local seguir o estado autoritativo da sala.
+   - posição esperada = pos + (agora_servidor − âncora)
+   - correção de deriva: playbackRate (±6%) para desvios pequenos, seek para grandes
+   - crossfade: agendado no horário do servidor (convertido para o relógio local)
+   ===================================================================== */
+class Follower {
+  constructor(engine, serverNow, toLocal, hooks = {}) {
+    this.engine = engine; this.now = serverNow; this.toLocal = toLocal; this.hooks = hooks;
+    this.S = null; this.enabled = true; this.busy = false; this.seq = 0;
+    this.correcting = false; this.noCorrectUntil = 0; this.drift = 0; this.status = 'loading';
+    this.playTimer = null; this.xfTimer = null; this.preTimer = null; this.lastKey = '';
+    this.timer = setInterval(() => this.tick(), 400);
+    engine.cb.onBlocked = () => this._setStatus('blocked');
+    engine.cb.onError = (track, err) => { this._setStatus('error'); if (hooks.onLoadError) hooks.onLoadError(track, err); };
+    engine.cb.onDuration = (track, d) => { if (hooks.onDuration) hooks.onDuration(track, d); };
+  }
+  _exp(S, now) { return S.playing ? S.pos + Math.max(0, (now - S.anchor) / 1000) : S.pos; }
+  expected() { return this.S ? this._exp(this.S, this.now()) : 0; }
+  _setStatus(s) { if (s !== this.status) { this.status = s; if (this.hooks.onStatus) this.hooks.onStatus(s); } }
+  setEnabled(on) {
+    this.enabled = on;
+    if (!on) { this._clearTimers(); this.engine.stop(); this.S = null; this.busy = false; this.seq++; }
+  }
+  destroy() { clearInterval(this.timer); this._clearTimers(); }
+  _clearTimers() { clearTimeout(this.playTimer); clearTimeout(this.xfTimer); clearTimeout(this.preTimer); this.playTimer = this.xfTimer = this.preTimer = null; }
+
+  apply(S) { this.S = S; if (this.enabled) this.reconcile(true); }
+  applyHb(h) {
+    if (!this.S || h.v !== this.S.v) return false;
+    Object.assign(this.S, { playing: h.playing, pos: h.pos, anchor: h.anchor, next: h.next, xf: h.xf });
+    if (this.enabled) this.reconcile(false);
+    return true;
+  }
+  kick() { if (this.S && this.enabled) { this.noCorrectUntil = 0; this.reconcile(true); } }
+
+  async reconcile(hard) {
+    const S = this.S, eng = this.engine; if (!S) return;
+    const cur = S.queue[S.index];
+    if (!cur) { this._clearTimers(); if (eng.qid) { eng.stop(); } this._setStatus('ok'); return; }
+    if (eng.qid !== cur.qid) await this._changeTrack(cur);
+    else if (!this.busy) this._align(hard);
+    this._schedule();
+  }
+
+  async _changeTrack(cur) {
+    const S = this.S, eng = this.engine, seq = ++this.seq;
+    this.busy = true; this._clearTimers(); this._setStatus('loading');
+    const now = this.now(), exp = this._exp(S, now), xf = S.xf;
+    const inFade = xf && xf.until > now;
+    try {
+      if (S.playing && inFade && eng.active && eng.isPlaying()) {
+        await eng.crossfadeTo(cur, Math.max(0.05, (xf.until - now) / 1000), { pos: Math.max(0, exp) });
+      } else {
+        await eng.setTrack(cur, { pos: S.playing ? (now < S.anchor ? S.pos : Math.max(0, exp)) : S.pos, play: S.playing && now >= S.anchor, fadeIn: S.playing && inFade ? (xf.until - now) / 1000 : 0 });
+      }
+    } catch (e) {
+      if (seq !== this.seq) return;
+      this.busy = false; this._setStatus('error'); if (this.hooks.onLoadError) this.hooks.onLoadError(cur, e); return;
+    }
+    if (seq !== this.seq) return;
+    this.busy = false;
+    if (this.hooks.onTrackStart && S.playing) this.hooks.onTrackStart(cur);
+    this.noCorrectUntil = 0; this._align(true); this._schedule();
+  }
+
+  _align(hard) {
+    const S = this.S, eng = this.engine; if (!S || this.busy) return;
+    const cur = S.queue[S.index]; if (!cur || eng.qid !== cur.qid || !eng.active) return;
+    const now = this.now();
+    if (!S.playing) {
+      clearTimeout(this.playTimer); this.playTimer = null;
+      if (eng.isPlaying()) eng.setPlaying(false);
+      eng.setRate(1); this.correcting = false;
+      this.drift = eng.getTime() - S.pos;
+      if (hard && Math.abs(this.drift) > 0.25) eng.seek(S.pos);
+      this._setStatus('ok'); return;
+    }
+    if (now < S.anchor) {               // janela de antecedência: todos esperam o mesmo instante
+      if (eng.isPlaying()) eng.setPlaying(false);
+      if (Math.abs(eng.getTime() - S.pos) > 0.1) eng.seek(S.pos);
+      const key = 'p' + S.v;
+      if (this.lastKey !== key || !this.playTimer) {
+        this.lastKey = key; clearTimeout(this.playTimer);
+        const lat = eng.startLatency(cur);
+        this.playTimer = setTimeout(() => {
+          this.playTimer = null; const S2 = this.S; if (!S2 || S2.v !== S.v || !S2.playing) return;
+          eng.seek(S2.pos + lat / 1000); eng.setPlaying(true); this.noCorrectUntil = performance.now() + 1500;
+        }, Math.max(0, this.toLocal(S.anchor) - Date.now() - lat));
+      }
+      this._setStatus('ok'); return;
+    }
+    const exp = this._exp(S, now);
+    if (!eng.isPlaying()) {             // deveria estar tocando
+      eng.seek(exp); eng.setPlaying(true); this.noCorrectUntil = performance.now() + 1500; return;
+    }
+    this.drift = eng.getTime() - exp;
+    const buffering = eng.isBuffering();
+    this._setStatus(buffering ? 'loading' : 'ok');
+    if (buffering || performance.now() < this.noCorrectUntil) return;
+    if (hard && Math.abs(this.drift) > 0.1) { eng.seek(exp); this.noCorrectUntil = performance.now() + 1500; return; }
+    const act = driftAction(this.drift, this.correcting, eng.fineRate());
+    if (act.seek) { eng.seek(exp); eng.setRate(1); this.correcting = false; this.noCorrectUntil = performance.now() + 1500; }
+    else { eng.setRate(act.rate); this.correcting = !!act.correcting; }
+  }
+  tick() { if (this.enabled && this.S && !this.busy) this._align(false); }
+
+  /* pré-carrega a próxima faixa e agenda o crossfade no horário do servidor */
+  _schedule() {
+    clearTimeout(this.xfTimer); clearTimeout(this.preTimer); this.xfTimer = this.preTimer = null;
+    const S = this.S, eng = this.engine; if (!S || !this.enabled || !S.playing || !S.next || this.busy) return;
+    const nx = S.next; const lat = eng.startLatency(nx.track);
+    const fireAt = this.toLocal(nx.startAt) - lat;
+    const untilStart = fireAt - Date.now();
+    const doPre = () => { if (this.S && this.S.next && this.S.next.qid === nx.qid) eng.preload(nx.track).catch(() => {}); };
+    if (untilStart < 25000) doPre(); else this.preTimer = setTimeout(doPre, untilStart - 20000);
+    const go = () => {
+      const rest = fireAt - Date.now();
+      if (rest > 4) { this.xfTimer = setTimeout(go, Math.min(rest - 3, 30)); return; }
+      const S2 = this.S; if (!S2 || !S2.playing || !S2.next || S2.next.qid !== nx.qid || this.busy) return;
+      if (this.engine.qid === nx.qid) return;
+      this.seq++;                                                   // invalida carregamentos antigos
+      if (nx.fade > 0.05 && eng.active) eng.crossfadeTo(nx.track, nx.fade, { pos: 0 }).catch((e) => this.hooks.onLoadError && this.hooks.onLoadError(nx.track, e));
+      else eng.setTrack(nx.track, { pos: 0, play: true }).catch((e) => this.hooks.onLoadError && this.hooks.onLoadError(nx.track, e));
+      if (this.hooks.onTrackStart) this.hooks.onTrackStart(nx.track);
+    };
+    this.xfTimer = setTimeout(go, Math.max(0, untilStart - 30));
+  }
+}
+
+/* =====================================================================
+   HostSession: o "servidor" da sala. Mantém o Room autoritativo, aceita conexões,
+   valida permissões e transmite o estado. Sem sala aberta = sessão local (solo).
+   ===================================================================== */
+class HostSession {
+  constructor({ engine, myId, name, fade = 5, hooks = {} }) {
+    this.type = 'host'; this.engine = engine; this.myId = myId; this.name = name; this.hooks = hooks;
+    this.room = new Room({ hostId: myId, name: 'Sessão local', fade });
+    this.room.addMember(myId, name); this.room.setStatus(myId, { ready: 'ok' });
+    this.shared = false; this.listener = null; this.conns = new Map(); this.pending = new Map(); this.admitted = new Map(); this.banned = new Set();
+    this.membersDirty = false; this.lastMsg = {};
+    this.follower = new Follower(engine, () => Date.now(), (ms) => ms, {
+      onStatus: (s) => { this.room.setStatus(myId, { ready: s }); this.membersDirty = true; if (hooks.onChange) hooks.onChange(); },
+      onDuration: (track, d) => this.dispatch({ type: 'dur', id: track.id, d }),
+      onLoadError: (track, e) => hooks.onLoadError && hooks.onLoadError(track, e),
+      onTrackStart: (track) => hooks.onTrackStart && hooks.onTrackStart(track),
+    });
+    this.timer = setInterval(() => this._tick(), 200);
+    this.hb = setInterval(() => this._heartbeat(), 2000);
+    this.mt = setInterval(() => { if (this.membersDirty) { this.membersDirty = false; this._broadcastMembers(); } }, 2000);
+  }
+  get S() { return this._snap || (this._snap = this.room.snapshot(Date.now())); }
+  state() { return this.S; }
+  members() { return this.room.membersList(); }
+  chat() { return this.room.chat; }
+  get isHost() { return true; }
+  get code() { return this.shared ? this.room.settings.code : null; }
+  canControl() { return true; } canEnqueue() { return true; }
+  conn() { return this.shared ? { state: 'ok', rtt: 0, offset: 0 } : null; }
+
+  dispatch(a) {
+    const r = this.room.apply(a, this.myId, Date.now());
+    if (r.ok && r.changed !== false) this._publish();
+    return r;
+  }
+  _publish() {
+    this._snap = this.room.snapshot(Date.now());
+    this.follower.apply(this._snap);
+    this._broadcast({ t: 'state', s: this._snap });
+    if (this.hooks.onChange) this.hooks.onChange();
+  }
+  _tick() { if (this.room.tick(Date.now())) this._publish(); }
+  _heartbeat() { if (this.shared && this.conns.size) this._broadcast({ t: 'hb', h: this.room.heartbeat(Date.now()) }); }
+  _broadcast(msg) { if (!this.shared) return; for (const { conn } of this.conns.values()) conn.send(msg); }
+  _broadcastMembers() { this._broadcast({ t: 'members', list: this.room.membersList() }); if (this.hooks.onChange) this.hooks.onChange(); }
+  _sys(text) {
+    const m = { id: rid(6), system: true, text, ts: Date.now() };
+    this.room.chat.push(m); if (this.room.chat.length > 100) this.room.chat.shift();
+    this._broadcast({ t: 'chat', m }); if (this.hooks.onChat) this.hooks.onChat(m);
+  }
+
+  async openRoom({ name, visibility, mode, guestsControl, kind = 'peer' }) {
+    let code = genCode(), tries = 0;
+    for (;;) {
+      try { this.listener = await root.STNet.listen(kind, code, (c) => this._onConn(c)); break; }
+      catch (e) { if (e.message === 'code-in-use' && tries++ < 4) { code = genCode(); continue; } throw e; }
+    }
+    this.room.settings.code = code; this.kind = kind;
+    this.room.apply({ type: 'settings', patch: { name: name || 'Minha sala', visibility, mode, guestsControl } }, this.myId, Date.now());
+    this.shared = true; this._publish(); return code;
+  }
+  closeRoom() {
+    if (!this.shared) return;
+    this._broadcast({ t: 'closed' });
+    for (const { conn } of [...this.conns.values()]) { conn.onclose = null; conn.close(); }
+    for (const p of this.pending.values()) { p.conn.send({ t: 'deny' }); p.conn.onclose = null; p.conn.close(); }
+    if (this.listener) this.listener.close();
+    this.listener = null; this.shared = false; this.conns.clear(); this.pending.clear(); this.admitted.clear(); this.banned.clear();
+    for (const id of [...this.room.members.keys()]) if (id !== this.myId) this.room.members.delete(id);
+    this.room.chat = []; this.room.apply({ type: 'settings', patch: { name: 'Sessão local', mode: 'host' } }, this.myId, Date.now());
+    this._publish();
+  }
+
+  _onConn(conn) {
+    conn.admitted = false; conn.cid = null;
+    conn.onmessage = (m) => this._onMsg(conn, m);
+    conn.onclose = () => this._onClose(conn);
+  }
+  _onMsg(conn, m) {
+    if (!m || typeof m !== 'object') return;
+    if (m.t === 'ping') { conn.send({ t: 'pong', t0: m.t0, ts: Date.now() }); return; }
+    if (m.t === 'hello') {
+      const cid = cleanStr(m.cid, 24);
+      if (!/^[a-z0-9]{4,24}$/.test(cid) || cid === this.myId) { conn.send({ t: 'deny' }); conn.close(); return; }
+      if (this.banned.has(cid)) { conn.send({ t: 'kicked' }); conn.close(); return; }
+      conn.cid = cid; conn.helloName = cleanStr(m.name, 24) || 'Convidado';
+      const token = cleanStr(m.token, 40);
+      if (this.admitted.get(cid) && this.admitted.get(cid) === token) this._admit(conn);
+      else if (this.room.settings.visibility === 'private') {
+        this.pending.set(cid, { conn, name: conn.helloName, token }); conn.send({ t: 'pending' });
+        if (this.hooks.onJoinRequest) this.hooks.onJoinRequest({ cid, name: conn.helloName });
+      } else { this.admitted.set(cid, token); this._admit(conn); }
+      return;
+    }
+    if (!conn.admitted) return;
+    const cid = conn.cid;
+    switch (m.t) {
+      case 'act': {
+        const r = this.room.apply(m.a, cid, Date.now());
+        if (!r.ok) conn.send({ t: 'err', msg: r.err }); else if (r.changed !== false) this._publish();
+        break;
+      }
+      case 'chat': {
+        const now = Date.now(); if (now - (this.lastMsg[cid] || 0) < 400) break; this.lastMsg[cid] = now;
+        const msg = this.room.addChat(cid, m.text, now);
+        if (msg) { this._broadcast({ t: 'chat', m: msg }); if (this.hooks.onChat) this.hooks.onChat(msg); }
+        break;
+      }
+      case 'status': this.room.setStatus(cid, m); this.membersDirty = true; break;
+      case 'need': conn.send({ t: 'state', s: this.room.snapshot(Date.now()) }); break;
+      case 'bye': this._remove(cid, 'saiu da sala'); break;
+    }
+  }
+  _admit(conn) {
+    const cid = conn.cid; const old = this.conns.get(cid);
+    if (old && old.conn !== conn) { old.conn.onclose = null; try { old.conn.close(); } catch {} }
+    this.pending.delete(cid);
+    this.conns.set(cid, { conn }); conn.admitted = true;
+    const existed = this.room.members.has(cid) && this.room.members.get(cid).online === false;
+    this.room.addMember(cid, conn.helloName);
+    conn.send({ t: 'welcome', you: cid, state: this.room.snapshot(Date.now()), members: this.room.membersList(), chat: this.room.chat, now: Date.now() });
+    this._sys(`${this.room.members.get(cid).name} ${existed ? 'voltou' : 'entrou na sala'}`);
+    this._broadcastMembers();
+  }
+  _onClose(conn) {
+    const cid = conn.cid;
+    if (cid && this.pending.get(cid) && this.pending.get(cid).conn === conn) { this.pending.delete(cid); if (this.hooks.onJoinCancel) this.hooks.onJoinCancel(cid); return; }
+    const e = cid && this.conns.get(cid);
+    if (e && e.conn === conn) {
+      this.conns.delete(cid); const m = this.room.members.get(cid);
+      if (m) { m.online = false; m.ready = 'loading'; this._sys(`${m.name} perdeu a conexão`); }
+      this._broadcastMembers();
+    }
+  }
+  _remove(cid, why) {
+    const m = this.room.members.get(cid); const e = this.conns.get(cid);
+    this.conns.delete(cid); if (e) { e.conn.onclose = null; try { e.conn.close(); } catch {} }
+    this.admitted.delete(cid); this.room.members.delete(cid);
+    if (m) this._sys(`${m.name} ${why}`);
+    this._broadcastMembers();
+  }
+  answer(cid, allow) {
+    const p = this.pending.get(cid); if (!p) return;
+    if (allow) { this.admitted.set(cid, p.token); this._admit(p.conn); }
+    else { p.conn.send({ t: 'deny' }); this.pending.delete(cid); p.conn.onclose = null; p.conn.close(); }
+  }
+  kick(cid) {
+    const e = this.conns.get(cid); if (e) e.conn.send({ t: 'kicked' });
+    this.banned.add(cid); this._remove(cid, 'foi removido da sala');
+  }
+  sendChat(text) {
+    const msg = this.room.addChat(this.myId, text, Date.now());
+    if (msg) { this._broadcast({ t: 'chat', m: msg }); if (this.hooks.onChat) this.hooks.onChat(msg); }
+  }
+  destroy() { clearInterval(this.timer); clearInterval(this.hb); clearInterval(this.mt); this.closeRoom(); this.follower.destroy(); }
+}
+
+/* =====================================================================
+   GuestSession: entra na sala de alguém. Estima o relógio do servidor, segue o estado,
+   reconecta sozinho se a conexão cair.
+   ===================================================================== */
+class GuestSession {
+  constructor({ engine, code, myId, name, token, hooks = {}, allowPeer = true }) {
+    this.type = 'guest'; this.engine = engine; this.code = code; this.myId = myId; this.name = name; this.token = token;
+    this.hooks = hooks; this.allowPeer = allowPeer;
+    this.clock = new ClockSync(); this.S = null; this._members = []; this._chat = [];
+    this.state = 'connecting'; this.conn_ = null; this.attempts = 0; this.closed = false; this.lastNeed = 0; this.bursts = 0;
+    this.follower = new Follower(engine, () => this.clock.serverNow(), (ms) => this.clock.toLocal(ms), {
+      onStatus: () => this._sendStatus(),
+      onLoadError: (t, e) => hooks.onLoadError && hooks.onLoadError(t, e),
+      onTrackStart: (t) => hooks.onTrackStart && hooks.onTrackStart(t),
+    });
+    this.pingT = null; this.statT = null;
+  }
+  get isHost() { return false; }
+  state_() { return this.S; }
+  members() { return this._members; }
+  chat() { return this._chat; }
+  conn() { return { state: this.state, rtt: this.clock.rtt, offset: this.clock.offset }; }
+  canControl() { return !!(this.S && this.S.settings.mode === 'collab' && this.S.settings.guestsControl); }
+  canEnqueue() { return !!(this.S && this.S.settings.mode === 'collab'); }
+  _changed() { if (this.hooks.onChange) this.hooks.onChange(); }
+
+  /* retorna 'ok' | 'pending' (aguardando aprovação) ; lança Error se não achou/negado */
+  async join() {
+    const conn = await root.STNet.connectAny(this.code, this.myId, { allowPeer: this.allowPeer });
+    return new Promise((resolve, reject) => {
+      this._joinWaiter = { resolve, reject }; this._bind(conn);
+      conn.send({ t: 'hello', cid: this.myId, name: this.name, token: this.token });
+      this._joinTimer = setTimeout(() => { if (this._joinWaiter && this.state === 'connecting') { this._joinWaiter = null; this._finish('left'); reject(new Error('A sala não respondeu.')); } }, 20000);
+    });
+  }
+  _bind(conn) {
+    this.conn_ = conn;
+    conn.onmessage = (m) => this._onMsg(m);
+    conn.onclose = () => { if (this.conn_ === conn) this._lost(); };
+  }
+  _send(o) { if (this.conn_ && this.conn_.open) this.conn_.send(o); }
+  _onMsg(m) {
+    if (!m || typeof m !== 'object') return;
+    switch (m.t) {
+      case 'pending': {
+        this.state = 'pending'; this._changed(); clearTimeout(this._joinTimer);
+        this._joinTimer = setTimeout(() => { if (this._joinWaiter) { const w = this._joinWaiter; this._joinWaiter = null; this._finish('left'); w.reject(new Error('O anfitrião não respondeu ao seu pedido de entrada.')); } }, 120000);
+        break;
+      }
+      case 'deny': { const w = this._joinWaiter; this._joinWaiter = null; this._finish('deny'); if (w) w.reject(new Error('O anfitrião recusou sua entrada.')); break; }
+      case 'kicked': { const w = this._joinWaiter; this._joinWaiter = null; this._finish('kicked'); if (w) w.reject(new Error('Você foi removido desta sala.')); break; }
+      case 'closed': this._finish('closed'); break;
+      case 'welcome': {
+        clearTimeout(this._joinTimer);
+        this.state = 'ok'; this.attempts = 0; this.S = m.state; this._members = m.members || []; this._chat = m.chat || [];
+        if (m.now) this.clock.provisional(m.now);    // estimativa grosseira (sem RTT); os pings a substituem
+        this._startLoops(); this.follower.apply(this.S);
+        if (this._joinWaiter) { this._joinWaiter.resolve('ok'); this._joinWaiter = null; }
+        this._changed(); break;
+      }
+      case 'state': this.S = m.s; this.follower.apply(this.S); this._changed(); break;
+      case 'hb': {
+        if (!this.S || m.h.v !== this.S.v) { const n = Date.now(); if (n - this.lastNeed > 1000) { this.lastNeed = n; this._send({ t: 'need' }); } }
+        else { Object.assign(this.S, { playing: m.h.playing, pos: m.h.pos, anchor: m.h.anchor, next: m.h.next, xf: m.h.xf }); this.follower.applyHb(m.h); }
+        break;
+      }
+      case 'pong':
+        this.clock.addSample(m.t0, m.ts, Date.now());
+        if (this.bursts === 6) this.follower.kick();     // relógio já refinado: realinha tudo
+        break;
+      case 'members': this._members = m.list || []; this._changed(); break;
+      case 'chat': this._chat.push(m.m); if (this._chat.length > 100) this._chat.shift(); if (this.hooks.onChat) this.hooks.onChat(m.m); this._changed(); break;
+      case 'err': if (this.hooks.onToast) this.hooks.onToast(m.msg); break;
+    }
+  }
+  _startLoops() {
+    clearInterval(this.pingT); clearInterval(this.statT); this.bursts = 0;
+    const ping = () => { this.bursts++; this._send({ t: 'ping', t0: Date.now() }); };
+    ping(); this.pingT = setInterval(() => { ping(); if (this.bursts === 8) { clearInterval(this.pingT); this.pingT = setInterval(ping, 4000); } }, 250);
+    this.statT = setInterval(() => this._sendStatus(), 2000);
+  }
+  _sendStatus() { this._send({ t: 'status', ready: this.follower.status, drift: this.follower.drift * 1000, rtt: this.clock.rtt }); }
+
+  dispatch(a) {
+    if (this.state !== 'ok') return { ok: false, err: 'Sem conexão com a sala.' };
+    this._send({ t: 'act', a }); return { ok: true, remote: true };
+  }
+  sendChat(text) { this._send({ t: 'chat', text }); }
+
+  async _lost() {
+    if (this.closed || this.state === 'closed' || this.state === 'kicked') return;
+    clearInterval(this.pingT); clearInterval(this.statT);
+    this.state = 'reconnecting'; this._changed();
+    const delays = [500, 1000, 2000, 3000, 5000];
+    while (!this.closed && this.state === 'reconnecting' && this.attempts < 40) {
+      await new Promise((r) => setTimeout(r, delays[Math.min(this.attempts, delays.length - 1)])); this.attempts++;
+      if (this.closed) return;
+      try {
+        const conn = await root.STNet.connectAny(this.code, this.myId, { allowPeer: this.allowPeer });
+        this._bind(conn); conn.send({ t: 'hello', cid: this.myId, name: this.name, token: this.token }); return;   // 'welcome' devolve state='ok'
+      } catch {}
+    }
+    if (!this.closed && this.state === 'reconnecting') this._finish('lost');
+  }
+  _finish(reason) {
+    if (this.closed) return; this.closed = true; this.state = reason === 'closed' ? 'closed' : reason;
+    clearInterval(this.pingT); clearInterval(this.statT); clearTimeout(this._joinTimer);
+    if (this.conn_) { this.conn_.onclose = null; try { this.conn_.close(); } catch {} }
+    this.follower.setEnabled(false); this.follower.destroy();
+    if (this.hooks.onEnded) this.hooks.onEnded(reason);
+  }
+  leave() {
+    if (this.closed) return;
+    this._send({ t: 'bye' }); this._finish('left');
+  }
+}
+
+root.STSession = { Follower, HostSession, GuestSession };
+if (typeof module !== 'undefined' && module.exports) module.exports = root.STSession;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>/* SyncTube Music — interface e orquestração */
+(function () {
+'use strict';
+const C = window.STCore, DB = window.STStore, { Engine, Sources } = window.STEngine, { HostSession, GuestSession } = window.STSession;
+const $ = (s, r = document) => r.querySelector(s);
+
+/* ============================ helpers de DOM ============================ */
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const k in props || {}) {
+    const v = props[k]; if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (v === true) el.setAttribute(k, '');
+    else el.setAttribute(k, v);
+  }
+  const add = (c) => { if (c == null || c === false) return; if (Array.isArray(c)) c.forEach(add); else el.appendChild(c.nodeType ? c : document.createTextNode(String(c))); };
+  kids.forEach(add); return el;
+}
+const ICONS = {
+  home: '<path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  library: '<path d="M4 4v16M9 4v16M14.5 5.5l5 14.5"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  settings: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h12M20 18h0"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  play: '<path class="x" d="M7 4l13 8-13 8z"/>', pause: '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>',
+  next: '<path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>', prev: '<path d="M19 4L9 12l10 8z"/><path d="M5 5v14"/>',
+  shuffle: '<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
+  repeat: '<path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>',
+  volume: '<path d="M11 5L6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',
+  mute: '<path d="M11 5L6 9H2v6h4l5 4zM23 9l-6 6M17 9l6 6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>', x: '<path d="M18 6L6 18M6 6l12 12"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  send: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
+  more: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+  music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  crown: '<path d="M2 18l2-11 5 5 3-8 3 8 5-5 2 11z"/>', share: '<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/>',
+  check: '<path d="M5 12l5 5 10-10"/>', edit: '<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  down: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>', up: '<path d="M12 21V9M7 14l5-5 5 5M5 3h14"/>',
+  chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  grip: '<circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/>',
+  ups: '<path d="M12 19V5M5 12l7-7 7 7"/>', downs: '<path d="M12 5v14M19 12l-7 7-7-7"/>',
+  swap: '<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+};
+const FILLED = new Set(['play', 'next', 'prev', 'crown', 'more', 'grip']);
+function icon(n, size, cls) {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'i' + (n === 'play' ? ' f' : '') + (cls ? ' ' + cls : '')); s.setAttribute('aria-hidden', 'true');
+  if (size) { s.style.width = s.style.height = size + 'px'; }
+  s.innerHTML = ICONS[n] || ''; if (FILLED.has(n) && n !== 'play') { s.setAttribute('class', s.getAttribute('class') + ' f'); }
+  return s;
+}
+const fmt = C.fmtTime;
+function toast(msg, kind) {
+  const t = h('div', { class: 'toast ' + (kind || '') }, msg); $('#toasts').appendChild(t);
+  setTimeout(() => { t.style.transition = 'opacity .3s'; t.style.opacity = 0; setTimeout(() => t.remove(), 300); }, kind === 'bad' ? 5000 : 2800);
+}
+function cover(track, cls) {
+  const hue = C.hueOf((track && (track.id || track.title)) || 'x');
+  const el = h('div', { class: 'cv ' + (cls || ''), style: { backgroundImage: `linear-gradient(135deg,hsl(${hue} 55% 38%),hsl(${(hue + 50) % 360} 60% 22%))` } }, icon('music'));
+  if (track && track.cover) {
+    const im = h('img', { alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', src: track.cover });
+    im.onerror = () => im.remove(); el.appendChild(im);
+  }
+  return el;
+}
+function plCover(pl, cls) {
+  if (pl.image) { const el = h('div', { class: 'cv pl ' + (cls || '') }); el.appendChild(h('img', { alt: '', src: pl.image })); return el; }
+  const ts = pl.tracks.map((id) => A.tracks.get(id)).filter(Boolean);
+  if (!ts.length) { const hue = C.hueOf(pl.id); return h('div', { class: 'cv ' + (cls || ''), style: { backgroundImage: `linear-gradient(135deg,hsl(${hue} 50% 34%),hsl(${(hue + 60) % 360} 55% 20%))` } }, icon('list')); }
+  return cover(ts.find((t) => t.cover) || ts[0], cls);
+}
+function modal({ title, body, actions, onClose, wide }) {
+  const ov = h('div', { class: 'ov', role: 'dialog', 'aria-modal': 'true', 'aria-label': title });
+  const close = () => { ov.remove(); document.removeEventListener('keydown', esc); if (onClose) onClose(); };
+  const esc = (e) => { if (e.key === 'Escape') close(); };
+  const box = h('div', { class: 'md', style: wide ? { width: 'min(720px,100%)' } : null },
+    h('div', { class: 'md-h' }, h('h2', null, title), h('button', { class: 'ib', 'aria-label': 'Fechar', onclick: close }, icon('x'))),
+    h('div', { class: 'md-b' }, body), actions ? h('div', { class: 'md-f' }, actions) : null);
+  ov.appendChild(box); ov.addEventListener('mousedown', (e) => { if (e.target === ov) close(); });
+  document.addEventListener('keydown', esc); document.body.appendChild(ov);
+  const f = box.querySelector('input,select,textarea'); if (f) setTimeout(() => f.focus(), 30);
+  return { close, el: box };
+}
+function popMenu(ev, items) {
+  document.querySelectorAll('.menu').forEach((m) => m.remove());
+  const m = h('div', { class: 'menu', role: 'menu' });
+  const close = () => { m.remove(); document.removeEventListener('mousedown', away, true); document.removeEventListener('keydown', esc); };
+  const away = (e) => { if (!m.contains(e.target)) close(); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  items.forEach((it) => {
+    if (it === '-') return m.appendChild(h('hr'));
+    if (!it) return;
+    m.appendChild(h('button', { role: 'menuitem', class: it.bad ? 'bad' : '', onclick: () => { close(); it.fn(); } }, it.icon ? icon(it.icon, 16) : null, it.label));
+  });
+  document.body.appendChild(m);
+  const r = (ev.currentTarget || ev.target).getBoundingClientRect(); const mw = m.offsetWidth, mh = m.offsetHeight;
+  let x = ev.clientX && ev.type === 'contextmenu' ? ev.clientX : r.right - mw, y = ev.clientY && ev.type === 'contextmenu' ? ev.clientY : r.bottom + 4;
+  x = Math.max(8, Math.min(innerWidth - mw - 8, x)); y = y + mh > innerHeight - 8 ? Math.max(8, (ev.type === 'contextmenu' ? ev.clientY : r.top) - mh - 4) : y;
+  m.style.left = x + 'px'; m.style.top = y + 'px';
+  setTimeout(() => { document.addEventListener('mousedown', away, true); document.addEventListener('keydown', esc); }, 0);
+}
+function toggle(checked, onchange, disabled) {
+  const i = h('input', { type: 'checkbox', role: 'switch', onchange: (e) => onchange(e.target.checked) }); i.checked = !!checked; i.disabled = !!disabled;
+  return h('label', { class: 'tog' }, i, h('i'));
+}
+function seg(options, value, onpick, disabled) {
+  return h('div', { class: 'seg', role: 'group' }, options.map(([v, label]) => h('button', { class: v === value ? 'on' : '', disabled, 'aria-pressed': v === value, onclick: () => onpick(v) }, label)));
+}
+function makeSortable(container, sel, onMove, canDrag = () => true) {
+  let from = null;
+  container.addEventListener('dragstart', (e) => { const r = e.target.closest && e.target.closest(sel); if (!r || !canDrag()) return e.preventDefault(); from = +r.dataset.i; r.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(from)); } catch {} });
+  container.addEventListener('dragend', () => { from = null; container.querySelectorAll('.dragging,.drag-over').forEach((x) => x.classList.remove('dragging', 'drag-over')); });
+  container.addEventListener('dragover', (e) => { if (from == null) return; const r = e.target.closest(sel); if (!r) return; e.preventDefault(); container.querySelectorAll('.drag-over').forEach((x) => x.classList.remove('drag-over')); r.classList.add('drag-over'); });
+  container.addEventListener('drop', (e) => { if (from == null) return; const r = e.target.closest(sel); if (!r) return; e.preventDefault(); const to = +r.dataset.i; const f = from; from = null; if (f !== to) onMove(f, to); });
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; } catch {
+    const ta = h('textarea', { style: { position: 'fixed', opacity: 0 } }); ta.value = t; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch {} ta.remove(); return ok;
+  }
+}
+function pluralize(n, a, b) { return n + ' ' + (n === 1 ? a : b); }
+function ago(ts) {
+  const s = (Date.now() - ts) / 1000;
+  if (s < 60) return 'agora'; if (s < 3600) return Math.floor(s / 60) + ' min'; if (s < 86400) return Math.floor(s / 3600) + ' h';
+  return new Date(ts).toLocaleDateString('pt-BR');
+}
+
+/* ============================ estado ============================ */
+const A = {
+  tracks: new Map(), playlists: [], history: [],
+  settings: { theme: 'dark', fade: 5, autoplay: true, quality: 'default', curve: 'equal', name: '' },
+  view: { name: 'home', arg: null }, engine: null, host: null, guest: null, session: null,
+  myId: '', token: '', vol: 0.8, muted: false, seeking: false, search: { q: '', sort: 'added' }, libSort: 'added', libQ: '',
+  reqs: new Map(), lastPlaying: false, lastQid: null, blocked: false, ready: false,
+};
+const S = () => (A.session ? (A.session === A.host ? A.session.state() : A.session.S) : null);
+const cur = () => { const s = S(); return s && s.index >= 0 ? s.queue[s.index] : null; };
+const isGuest = () => A.session && A.session.type === 'guest';
+const inRoom = () => (A.host && A.host.shared) || isGuest();
+const canCtl = () => (A.session ? A.session.canControl() : false);
+const pub = (t) => ({ source: t.source, sourceId: t.sourceId, url: t.url, title: t.title, artist: t.artist, album: t.album, cover: t.cover, duration: t.duration });
+
+const saveSettings = () => DB.kvSet('settings', A.settings);
+const saveTrack = (t) => DB.put('tracks', t);
+const savePl = (p) => DB.put('playlists', p);
+function applyTheme() { document.documentElement.dataset.theme = A.settings.theme; }
+function sortTracks(list, by) {
+  const l = [...list];
+  if (by === 'name') l.sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
+  else if (by === 'artist') l.sort((a, b) => a.artist.localeCompare(b.artist, 'pt-BR') || a.title.localeCompare(b.title, 'pt-BR'));
+  else l.sort((a, b) => b.added - a.added);
+  return l;
+}
+const allTracks = () => [...A.tracks.values()];
+const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function matches(t, q) { q = norm(q.trim()); if (!q) return true; return q.split(/\s+/).every((w) => norm(t.title + ' ' + t.artist + ' ' + (t.album || '')).includes(w)); }
+
+/* ============================ ações de reprodução ============================ */
+function act(a) {
+  if (!A.session) return { ok: false };
+  A.engine.resume();
+  const r = A.session.dispatch(a);
+  if (!r.ok && r.err) toast(r.err, 'bad');
+  return r;
+}
+function playTracks(list, start = 0, shuffle) {
+  if (!list.length) return;
+  const arr = list.slice(0, C.MAX_QUEUE).map(pub);
+  if (isGuest()) {
+    if (!A.session.canEnqueue()) return toast('Só o anfitrião escolhe as músicas desta sala.', 'bad');
+    arr.forEach((t) => A.session.dispatch({ type: 'enqueue', track: t })); return toast(pluralize(arr.length, 'música adicionada', 'músicas adicionadas') + ' à fila da sala', 'ok');
+  }
+  act({ type: 'setQueue', tracks: arr, start: shuffle ? Math.floor(Math.random() * arr.length) : start, shuffle: shuffle === undefined ? undefined : shuffle });
+}
+function enqueue(t, next, play) {
+  const r = act({ type: 'enqueue', track: pub(t), next: !!next, play: !!play });
+  if (r.ok && !play) toast(next ? 'Toca em seguida' : 'Adicionada à fila', 'ok');
+}
+function togglePlay() {
+  const s = S(); if (!s) return;
+  if (!s.queue.length) { toast('A fila está vazia. Adicione músicas à biblioteca e toque.'); return; }
+  act({ type: s.playing ? 'pause' : 'play' });
+}
+function toggleFav(t) {
+  const lt = A.tracks.get(t.id); if (!lt) return;
+  lt.fav = !lt.fav; saveTrack(lt); renderAll();
+}
+function inLib(t) { return A.tracks.has(t.id); }
+
+/* ============================ biblioteca / playlists ============================ */
+async function addToLibrary(t, extra) {
+  const base = C.sanitizeTrack(t); if (!base) throw new Error('Faixa inválida.');
+  const ex = A.tracks.get(base.id);
+  if (ex) return { track: ex, existed: true };
+  const nt = { ...base, ...extra, added: Date.now(), fav: false, plays: 0, lastPlayed: 0 };
+  A.tracks.set(nt.id, nt); await saveTrack(nt); renderAll(); return { track: nt, existed: false };
+}
+async function removeFromLibrary(t) {
+  A.tracks.delete(t.id); await DB.del('tracks', t.id);
+  for (const p of A.playlists) { const n = p.tracks.length; p.tracks = p.tracks.filter((x) => x !== t.id); if (p.tracks.length !== n) await savePl(p); }
+  renderAll(); toast('Removida da biblioteca');
+}
+async function newPlaylist(name, image) {
+  const p = { id: 'p' + C.rid(8), name: C.cleanStr(name, 60) || 'Minha playlist', image: image || '', tracks: [], created: Date.now() };
+  A.playlists.push(p); await savePl(p); renderAll(); return p;
+}
+async function deletePlaylist(p) {
+  A.playlists = A.playlists.filter((x) => x.id !== p.id); await DB.del('playlists', p.id);
+  if (A.view.name === 'playlist' && A.view.arg === p.id) go('playlists'); else renderAll(); toast('Playlist excluída');
+}
+function playlistModal(p, after) {
+  let image = p ? p.image : '';
+  const name = h('input', { type: 'text', maxlength: 60, placeholder: 'Nome da playlist', value: p ? p.name : '' });
+  const prev = h('div'); const upd = () => { prev.replaceChildren(plCover({ id: p ? p.id : 'new', image, tracks: p ? p.tracks : [] }, '')); prev.firstChild.style.cssText = 'width:110px;height:110px'; };
+  const file = h('input', { type: 'file', accept: 'image/*', style: { display: 'none' }, onchange: async (e) => { const f = e.target.files[0]; if (!f) return; try { image = await imageToDataUrl(f, 400, 0.82); upd(); } catch { toast('Não consegui ler essa imagem.', 'bad'); } } });
+  upd();
+  const m = modal({
+    title: p ? 'Editar playlist' : 'Nova playlist',
+    body: [h('div', { class: 'row' }, prev, h('div', { class: 'col', style: { flex: 1, minWidth: '200px' } },
+      h('label', { class: 'f' }, 'Nome', name), file,
+      h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: () => file.click() }, icon('up', 16), 'Escolher imagem'), h('button', { class: 'btn sm ghost', onclick: () => { image = ''; upd(); } }, 'Remover imagem'))))],
+    actions: [h('button', { class: 'btn', onclick: () => m.close() }, 'Cancelar'),
+      h('button', { class: 'btn pri', onclick: async () => {
+        if (p) { p.name = C.cleanStr(name.value, 60) || p.name; p.image = image; await savePl(p); renderAll(); m.close(); if (after) after(p); }
+        else { const np = await newPlaylist(name.value, image); m.close(); if (after) after(np); }
+      } }, p ? 'Salvar' : 'Criar')],
+  });
+  name.addEventListener('keydown', (e) => { if (e.key === 'Enter') m.el.querySelector('.btn.pri').click(); });
+}
+function imageToDataUrl(file, max, q) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file); const im = new Image();
+    im.onload = () => {
+      const r = Math.min(1, max / Math.max(im.width, im.height)); const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(im.width * r)); c.height = Math.max(1, Math.round(im.height * r));
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', q));
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('img')); }; im.src = url;
+  });
+}
+function pickPlaylists(t) {
+  const sel = new Set(A.playlists.filter((p) => p.tracks.includes(t.id)).map((p) => p.id)); const orig = new Set(sel);
+  const wrap = h('div', { class: 'pickwrap' });
+  const draw = () => {
+    wrap.replaceChildren();
+    if (!A.playlists.length) wrap.appendChild(h('p', { class: 'mute', style: { padding: '8px' } }, 'Você ainda não tem playlists.'));
+    A.playlists.forEach((p) => {
+      const cb = h('input', { type: 'checkbox', onchange: (e) => { e.target.checked ? sel.add(p.id) : sel.delete(p.id); } }); cb.checked = sel.has(p.id);
+      const c = plCover(p, ''); wrap.appendChild(h('label', { class: 'pickrow' }, cb, c, h('div', { class: 'tx' }, h('b', null, p.name), h('small', null, pluralize(p.tracks.length, 'música', 'músicas')))));
+    });
+  };
+  draw();
+  const m = modal({ title: 'Adicionar à playlist', body: [h('p', { class: 'mute' }, `${t.title} — ${t.artist}`), wrap,
+    h('button', { class: 'btn sm', onclick: () => playlistModal(null, async (np) => { sel.add(np.id); draw(); }) }, icon('plus', 16), 'Nova playlist')],
+  actions: [h('button', { class: 'btn', onclick: () => m.close() }, 'Cancelar'), h('button', { class: 'btn pri', onclick: async () => {
+    if (!inLib(t)) await addToLibrary(t);
+    for (const p of A.playlists) {
+      const has = p.tracks.includes(t.id);
+      if (sel.has(p.id) && !has) { p.tracks.push(t.id); await savePl(p); } else if (!sel.has(p.id) && has && orig.has(p.id)) { p.tracks = p.tracks.filter((x) => x !== t.id); await savePl(p); }
+    }
+    renderAll(); m.close(); toast('Playlists atualizadas', 'ok');
+  } }, 'Salvar')] });
+}
+
+/* ============================ adicionar música por link ============================ */
+function addMusicModal(opts = {}) {
+  const input = h('input', { type: 'url', placeholder: 'Cole um link: YouTube ou áudio direto (.mp3, .ogg, .wav, .m4a…)', autocomplete: 'off', spellcheck: 'false' });
+  const status = h('div'); const preview = h('div'); const foot = h('div', { class: 'md-f', style: { padding: 0 } });
+  let cur_ = null, token = 0;
+  const m = modal({ title: 'Adicionar música', body: [h('label', { class: 'f' }, 'Link da música', input), status, preview, foot], wide: true });
+  const setStatus = (kind, text, loading) => status.replaceChildren(text ? h('div', { class: 'note ' + (kind === 'bad' ? 'bad' : kind === 'warn' ? 'warn' : ''), role: 'status' }, loading ? h('span', { class: 'spinner', style: { marginRight: '8px', verticalAlign: 'middle' } }) : null, text) : '');
+  const tip = h('div', { class: 'note', style: { fontSize: '12px' } }, 'Funciona com: vídeos do YouTube (pelo player oficial incorporado) e links diretos de arquivos de áudio. Spotify, Apple Music, Deezer e similares não permitem tocar por link em outros players, e o app não finge que tocam.');
+  status.appendChild(tip);
+
+  async function analyze() {
+    const my = ++token; cur_ = null; preview.replaceChildren(); foot.replaceChildren();
+    const id = C.identifyUrl(input.value);
+    if (id.status === 'empty') { status.replaceChildren(tip); return; }
+    if (id.status === 'invalid') return setStatus('bad', id.reason);
+    if (id.status === 'unsupported') return setStatus('bad', `${id.label}: ${id.reason}`);
+    setStatus('', `Identificado: ${id.label}. Buscando informações…`, true);
+    try {
+      let track, note = '';
+      if (id.platform === 'youtube') {
+        let info;
+        try { info = await Sources.probeYouTube(id.id); }
+        catch (e) {
+          if (e instanceof TypeError) { info = { title: 'Vídeo do YouTube (' + id.id + ')', artist: 'YouTube', cover: 'https://i.ytimg.com/vi/' + id.id + '/hqdefault.jpg' }; note = 'Sem conexão com o YouTube agora: não consegui confirmar o vídeo nem buscar o título. Você pode salvar e editar o nome.'; }
+          else throw e;
+        }
+        track = { source: 'youtube', sourceId: id.id, url: id.url, title: info.title, artist: info.artist || 'YouTube', cover: info.cover, duration: 0 };
+      } else {
+        const pr = await Sources.probeDirect(id.url); const meta = pr.meta || {};
+        let cov = ''; if (meta.cover) { try { cov = await imageToDataUrl(new Blob([meta.cover.data], { type: meta.cover.mime }), 220, 0.8); } catch {} }
+        const fname = decodeURIComponent((new URL(id.url).pathname.split('/').pop() || '').replace(/\.[a-z0-9]{2,5}$/i, '')).replace(/[_]+/g, ' ').trim();
+        track = { source: 'direct', url: id.url, title: meta.title || fname || 'Faixa sem título', artist: meta.artist || 'Artista desconhecido', album: meta.album || '', cover: cov, duration: pr.duration };
+        if (!pr.corsOk) note = 'Este servidor não libera CORS: a música toca normalmente, mas o crossfade usa o controle de volume do elemento de áudio (continua funcionando).';
+        if (id.status === 'try') note = (note ? note + ' ' : '') + 'A extensão do link não é de áudio conhecida, mas o arquivo carregou.';
+      }
+      if (my !== token) return;
+      if (id.platform === 'youtube' && fileProto()) note = 'Atenção: você abriu o app direto do arquivo (file://). O YouTube se recusa a tocar assim (erro de “origem”). Você pode salvar a música, mas ela só tocará quando o app for aberto por http(s): servidor local (localhost) ou hospedagem.';
+      cur_ = track; setStatus(note ? 'warn' : '', note || (id.platform === 'youtube' ? 'Vídeo encontrado. Compatível com reprodução incorporada.' : 'Áudio carregado com sucesso.'));
+      showPreview(track);
+    } catch (e) { if (my === token) setStatus('bad', e.message || 'Não foi possível ler este link.'); }
+  }
+  function showPreview(t) {
+    const title = h('input', { type: 'text', value: t.title, maxlength: 200, 'aria-label': 'Título' }); const artist = h('input', { type: 'text', value: t.artist, maxlength: 120, 'aria-label': 'Artista' });
+    const get = () => ({ ...t, title: title.value.trim() || t.title, artist: artist.value.trim() || t.artist });
+    preview.replaceChildren(h('div', { class: 'preview' }, cover(t), h('div', { class: 'col' }, title, artist, h('div', { class: 'mute' }, (t.duration ? fmt(t.duration) + ' · ' : '') + (t.source === 'youtube' ? 'YouTube' : 'Áudio direto')))));
+    const plSel = h('select', { 'aria-label': 'Playlist' }, h('option', { value: '' }, 'Adicionar à playlist…'), A.playlists.map((p) => h('option', { value: p.id }, p.name)), h('option', { value: '__new' }, '+ Nova playlist'));
+    const busy = (b) => foot.querySelectorAll('button').forEach((x) => (x.disabled = b));
+    const doSave = async (and) => {
+      busy(true);
+      try {
+        const { track, existed } = await addToLibrary(get());
+        let pl = plSel.value;
+        if (pl === '__new') { const np = await newPlaylist(track.title + ' — playlist'); pl = np.id; }
+        if (pl) { const p = A.playlists.find((x) => x.id === pl); if (p && !p.tracks.includes(track.id)) { p.tracks.push(track.id); await savePl(p); renderAll(); } }
+        toast(existed ? 'Essa música já estava na biblioteca' : 'Salva na biblioteca', existed ? '' : 'ok');
+        if (and === 'play') { if (isGuest()) enqueue(track); else act({ type: 'setQueue', tracks: [pub(track)], start: 0 }); }
+        if (and === 'queue') enqueue(track);
+        m.close();
+      } catch (e) { toast(e.message || 'Erro ao salvar', 'bad'); busy(false); }
+    };
+    foot.replaceChildren(h('div', { class: 'row', style: { flex: 1, minWidth: '180px' } }, plSel),
+      h('button', { class: 'btn', onclick: () => doSave('queue') }, 'Salvar e pôr na fila'),
+      h('button', { class: 'btn', onclick: () => doSave() }, 'Salvar'),
+      h('button', { class: 'btn pri', onclick: () => doSave('play') }, icon('play', 16), isGuest() ? 'Salvar e pôr na fila da sala' : 'Salvar e tocar'));
+  }
+  input.addEventListener('input', () => { clearTimeout(analyze.t); analyze.t = setTimeout(analyze, 450); });
+  input.addEventListener('paste', () => setTimeout(analyze, 30));
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') analyze(); });
+  if (opts.url) { input.value = opts.url; analyze(); }
+}
+
+/* ============================ rotas e views ============================ */
+const NAV = [['home', 'Início', 'home'], ['search', 'Buscar músicas', 'search'], ['library', 'Minha biblioteca', 'library'], ['playlists', 'Playlists', 'list'], ['favorites', 'Favoritos', 'heart'], ['history', 'Histórico', 'clock'], ['room', 'Ouvir junto', 'users'], ['settings', 'Configurações', 'settings']];
+function go(name, arg) { location.hash = '#/' + name + (arg ? '/' + arg : ''); }
+function parseHash() {
+  const hs = location.hash || '';
+  const inv = hs.match(/^#sala=([A-Za-z0-9]{4,12})/i) || hs.match(/^#\/sala\/([A-Za-z0-9]{4,12})/i);
+  if (inv) return { invite: C.normCode(inv[1]) };
+  const m = hs.match(/^#\/([a-z]+)(?:\/(.+))?$/); const name = m ? m[1] : 'home';
+  return { name: NAV.some((n) => n[0] === name) || name === 'playlist' ? name : 'home', arg: m && m[2] ? decodeURIComponent(m[2]) : null };
+}
+async function route() {
+  const r = parseHash();
+  if (r.invite) { history.replaceState(null, '', '#/room'); A.view = { name: 'room', arg: null }; renderAll(); joinPrompt(r.invite); return; }
+  A.view = r; renderAll(); $('#main').scrollTop = 0;
+}
+
+function sectionHead(title, linkText, onLink) { return h('div', { class: 'sec-h' }, h('h2', null, title), linkText ? h('button', { class: 'link', onclick: onLink }, linkText) : null); }
+function emptyState(ic, text, btn) { return h('div', { class: 'empty' }, icon(ic), h('div', null, text), btn || null); }
+const addBtn = () => h('button', { class: 'btn pri', onclick: () => addMusicModal() }, icon('plus', 18), 'Adicionar música');
+
+function trackCard(t, list, i) {
+  const s = S(); const c = cur(); const playing = c && c.id === t.id && s.playing;
+  return h('div', { class: 'card', tabindex: 0, role: 'button', 'aria-label': `Tocar ${t.title}`, onclick: () => playTracks(list, i), onkeydown: (e) => { if (e.key === 'Enter') playTracks(list, i); }, oncontextmenu: (e) => { e.preventDefault(); trackMenu(e, t, {}); } },
+    cover(t), h('div', { class: 't' }, t.title), h('div', { class: 's' }, t.artist), h('span', { class: 'pp' }, icon(playing ? 'pause' : 'play', 20)));
+}
+function plCard(p) {
+  return h('div', { class: 'card', tabindex: 0, role: 'button', onclick: () => go('playlist', p.id), onkeydown: (e) => { if (e.key === 'Enter') go('playlist', p.id); } }, plCover(p), h('div', { class: 't' }, p.name), h('div', { class: 's' }, pluralize(p.tracks.length, 'música', 'músicas')));
+}
+function recommendations() {
+  const tracks = allTracks(); if (tracks.length < 3) return [];
+  const aff = new Map(); const now = Date.now();
+  tracks.forEach((t) => { const w = (t.fav ? 3 : 0) + Math.min(5, t.plays || 0) * 0.6; if (w) aff.set(t.artist, (aff.get(t.artist) || 0) + w); });
+  return tracks.map((t) => ({ t, sc: (aff.get(t.artist) || 0) + (t.fav ? 0 : 0.5) + (now - (t.lastPlayed || 0) > 86400000 ? 1.5 : 0) - (t.plays || 0) * 0.15 + Math.random() * 0.4 }))
+    .sort((a, b) => b.sc - a.sc).slice(0, 12).map((x) => x.t);
+}
+
+const VIEWS = {
+  home() {
+    const tr = allTracks(); const hr = new Date().getHours(); const hi = hr < 5 ? 'Boa madrugada' : hr < 12 ? 'Bom dia' : hr < 18 ? 'Boa tarde' : 'Boa noite';
+    const v = h('div', null, h('h1', null, hi + (A.settings.name ? ', ' + A.settings.name : '')), h('p', { class: 'sub' }, 'Monte sua biblioteca com links e ouça sozinho ou com amigos em tempo real.'));
+    if (!tr.length) {
+      v.appendChild(h('div', { class: 'sec' }, h('div', { class: 'box', style: { display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'flex-start' } },
+        h('h2', null, 'Comece adicionando sua primeira música'), h('p', { class: 'mute' }, 'Cole o link de um vídeo do YouTube ou de um arquivo de áudio (MP3, OGG…). Depois crie playlists, ative o crossfade e convide amigos para ouvir juntos.'),
+        h('div', { class: 'row' }, addBtn(), h('button', { class: 'btn', onclick: () => go('room') }, icon('users', 18), 'Ouvir junto com amigos')))));
+      return v;
+    }
+    const rec = sortTracks(tr, 'added').slice(0, 12);
+    v.appendChild(h('div', { class: 'sec' }, sectionHead('Adicionadas recentemente', 'Ver biblioteca', () => go('library')), h('div', { class: 'grid' }, rec.map((t, i) => trackCard(t, rec, i)))));
+    if (A.playlists.length) v.appendChild(h('div', { class: 'sec' }, sectionHead('Suas playlists', 'Ver todas', () => go('playlists')), h('div', { class: 'grid' }, A.playlists.slice(0, 6).map(plCard))));
+    const fav = tr.filter((t) => t.fav).slice(0, 12); if (fav.length) v.appendChild(h('div', { class: 'sec' }, sectionHead('Músicas favoritas', 'Ver favoritos', () => go('favorites')), h('div', { class: 'grid' }, fav.map((t, i) => trackCard(t, fav, i)))));
+    const rc = recommendations(); if (rc.length) v.appendChild(h('div', { class: 'sec' }, sectionHead('Recomendadas para você', null), h('p', { class: 'mute', style: { marginTop: '-6px', marginBottom: '12px' } }, 'Baseadas no que você favorita e ouve na sua biblioteca.'), h('div', { class: 'grid' }, rc.map((t, i) => trackCard(t, rc, i)))));
+    return v;
+  },
+  search() {
+    const v = h('div'); const input = h('input', { type: 'search', placeholder: 'Buscar por título, artista ou álbum — ou cole um link para adicionar', value: A.search.q, 'aria-label': 'Buscar' });
+    const res = h('div', { class: 'sec' });
+    const draw = () => {
+      res.replaceChildren(); const q = A.search.q.trim();
+      if (!q) { res.appendChild(emptyState('search', 'Digite para buscar na sua biblioteca. Para adicionar algo novo, cole um link.')); return; }
+      if (/^(https?:\/\/|www\.|youtu)/i.test(q)) { res.appendChild(h('div', { class: 'box row' }, h('div', { style: { flex: 1 } }, h('b', null, 'Isso parece um link.'), h('div', { class: 'mute' }, 'Quer adicionar como música?')), h('button', { class: 'btn pri', onclick: () => addMusicModal({ url: q }) }, icon('plus', 16), 'Analisar e adicionar'))); return; }
+      const list = sortTracks(allTracks().filter((t) => matches(t, q)), 'name');
+      res.appendChild(list.length ? trackList(list, {}) : emptyState('search', `Nada encontrado para “${q}” na sua biblioteca.`, h('button', { class: 'btn', onclick: () => addMusicModal() }, 'Adicionar música por link')));
+    };
+    input.addEventListener('input', () => { A.search.q = input.value; draw(); });
+    v.append(h('h1', null, 'Buscar músicas'), h('div', { style: { margin: '16px 0', maxWidth: '640px' } }, input), res); draw(); setTimeout(() => input.focus(), 30); return v;
+  },
+  library() {
+    const v = h('div'); const tr = allTracks();
+    const head = h('div', { class: 'row', style: { justifyContent: 'space-between', marginBottom: '14px' } }, h('div', null, h('h1', null, 'Minha biblioteca'), h('p', { class: 'sub' }, pluralize(tr.length, 'música salva', 'músicas salvas') + (DB.persistent ? '' : ' (armazenamento temporário: este navegador bloqueou o armazenamento permanente)'))), addBtn());
+    v.appendChild(head); if (!tr.length) { v.appendChild(emptyState('library', 'Sua biblioteca está vazia.', addBtn())); return v; }
+    const q = h('input', { type: 'search', placeholder: 'Pesquisar na biblioteca', value: A.libQ, style: { maxWidth: '360px' }, 'aria-label': 'Pesquisar na biblioteca' });
+    const so = seg([['added', 'Mais recentes'], ['name', 'Nome'], ['artist', 'Artista']], A.libSort, (x) => { A.libSort = x; renderView(); });
+    const holder = h('div', { style: { marginTop: '12px' } });
+    const draw = () => { const l = sortTracks(tr.filter((t) => matches(t, A.libQ)), A.libSort); holder.replaceChildren(l.length ? trackList(l, {}) : h('p', { class: 'mute', style: { padding: '14px' } }, 'Nenhuma música combina com a busca.')); };
+    q.addEventListener('input', () => { A.libQ = q.value; draw(); }); draw();
+    v.append(h('div', { class: 'row' }, q, so, h('button', { class: 'btn', onclick: () => { const l = sortTracks(tr.filter((t) => matches(t, A.libQ)), A.libSort); playTracks(l, 0, true); } }, icon('shuffle', 16), 'Aleatório')), holder);
+    return v;
+  },
+  playlists() {
+    const v = h('div', null, h('div', { class: 'row', style: { justifyContent: 'space-between', marginBottom: '18px' } }, h('h1', null, 'Playlists'), h('button', { class: 'btn pri', onclick: () => playlistModal(null, (p) => go('playlist', p.id)) }, icon('plus', 18), 'Nova playlist')));
+    v.appendChild(A.playlists.length ? h('div', { class: 'grid' }, A.playlists.map(plCard)) : emptyState('list', 'Crie playlists para organizar suas músicas.', h('button', { class: 'btn pri', onclick: () => playlistModal(null, (p) => go('playlist', p.id)) }, 'Criar primeira playlist')));
+    return v;
+  },
+  playlist(id) {
+    const p = A.playlists.find((x) => x.id === id); if (!p) return emptyState('list', 'Playlist não encontrada.', h('button', { class: 'btn', onclick: () => go('playlists') }, 'Voltar'));
+    const list = p.tracks.map((i) => A.tracks.get(i)).filter(Boolean); const total = list.reduce((a, t) => a + (t.duration || 0), 0);
+    const v = h('div'); const c = plCover(p, '');
+    v.appendChild(h('div', { class: 'page-h' }, c, h('div', { class: 'meta' }, h('span', { class: 'kind' }, 'Playlist'), h('h1', null, p.name), h('div', { class: 'mute' }, pluralize(list.length, 'música', 'músicas') + (total ? ' · ' + fmt(total) : '')),
+      h('div', { class: 'actions' }, h('button', { class: 'big-play', 'aria-label': 'Tocar playlist', disabled: !list.length, onclick: () => playTracks(list, 0) }, icon('play', 26)),
+        h('button', { class: 'btn', disabled: !list.length, onclick: () => playTracks(list, 0, true) }, icon('shuffle', 16), 'Aleatório'),
+        h('button', { class: 'btn', onclick: () => playlistModal(p) }, icon('edit', 16), 'Editar'),
+        h('button', { class: 'btn bad', onclick: () => { if (confirm(`Excluir a playlist “${p.name}”? As músicas continuam na biblioteca.`)) deletePlaylist(p); } }, icon('trash', 16), 'Excluir')))));
+    if (!list.length) { v.appendChild(emptyState('music', 'Esta playlist está vazia. Use “⋯ → Adicionar à playlist” em qualquer música.', h('button', { class: 'btn', onclick: () => go('library') }, 'Ir para a biblioteca'))); return v; }
+    v.appendChild(trackList(list, { playlist: p, drag: true })); return v;
+  },
+  favorites() {
+    const l = sortTracks(allTracks().filter((t) => t.fav), 'added'); const v = h('div', null, h('h1', null, 'Favoritos'), h('p', { class: 'sub', style: { marginBottom: '16px' } }, pluralize(l.length, 'música favoritada', 'músicas favoritadas')));
+    v.appendChild(l.length ? h('div', null, h('div', { class: 'actions', style: { marginBottom: '14px' } }, h('button', { class: 'big-play', 'aria-label': 'Tocar favoritos', onclick: () => playTracks(l, 0) }, icon('play', 26)), h('button', { class: 'btn', onclick: () => playTracks(l, 0, true) }, icon('shuffle', 16), 'Aleatório')), trackList(l, {})) : emptyState('heart', 'Toque no coração de uma música para favoritá-la.'));
+    return v;
+  },
+  history() {
+    const v = h('div', null, h('div', { class: 'row', style: { justifyContent: 'space-between', marginBottom: '16px' } }, h('div', null, h('h1', null, 'Histórico'), h('p', { class: 'sub' }, 'Tocadas recentemente')), A.history.length ? h('button', { class: 'btn', onclick: async () => { if (confirm('Limpar o histórico?')) { A.history = []; await DB.clear('history'); renderAll(); } } }, icon('trash', 16), 'Limpar') : null));
+    if (!A.history.length) { v.appendChild(emptyState('clock', 'As músicas que você ouvir aparecerão aqui.')); return v; }
+    const items = [...A.history].sort((a, b) => b.at - a.at).slice(0, 100); const tl = h('div', { class: 'tl' });
+    items.forEach((it, i) => { const t = A.tracks.get(it.track.id) || it.track; tl.appendChild(trackRow(t, i, items.map((x) => A.tracks.get(x.track.id) || x.track), { when: ago(it.at) })); });
+    v.appendChild(tl); return v;
+  },
+  settings() { return settingsView(); },
+  room() { return roomView(); },
+};
+
+/* ---- listas de faixas ---- */
+function trackList(list, o) {
+  const wrap = h('div', { class: 'tl', role: 'list' });
+  wrap.appendChild(h('div', { class: 'tl-h' }, h('span', null, '#'), h('span', null, 'Título'), h('span', { class: 'al' }, 'Álbum'), h('span', { class: 'da' }, 'Adicionada'), h('span', { style: { textAlign: 'right' } }, 'Duração'), h('span'), h('span')));
+  list.forEach((t, i) => wrap.appendChild(trackRow(t, i, list, o)));
+  if (o.drag && o.playlist) makeSortable(wrap, '.tr', async (from, to) => { const p = o.playlist; const [x] = p.tracks.splice(from, 1); p.tracks.splice(to, 0, x); await savePl(p); renderView(); });
+  return wrap;
+}
+function trackRow(t, i, list, o = {}) {
+  const s = S(); const c = cur(); const isCur = !!(c && c.id === t.id); const playing = isCur && s.playing;
+  const n = h('div', { class: 'n' }, isCur ? h('span', { class: 'eq' + (playing ? '' : ' paused') }, h('i'), h('i'), h('i')) : h('span', { class: 'num' }, String(i + 1)),
+    h('button', { class: 'pl', 'aria-label': (playing ? 'Pausar ' : 'Tocar ') + t.title, onclick: (e) => { e.stopPropagation(); if (isCur) togglePlay(); else playTracks(list, i); } }, icon(playing ? 'pause' : 'play', 18)));
+  const row = h('div', { class: 'tr' + (isCur ? ' cur' : ''), role: 'listitem', 'data-i': i, draggable: o.drag ? 'true' : null, ondblclick: () => playTracks(list, i), oncontextmenu: (e) => { e.preventDefault(); trackMenu(e, t, o, list, i); } },
+    n, h('div', { class: 'info' }, cover(t), h('div', { style: { minWidth: 0 } }, h('span', { class: 'tt' }, t.title, h('span', { class: 'src' }, t.source === 'youtube' ? 'YT' : 'MP3')), h('span', { class: 'ar' }, t.artist))),
+    h('span', { class: 'al' }, t.album || '—'), h('span', { class: 'da' }, o.when || (t.added ? new Date(t.added).toLocaleDateString('pt-BR') : '')), h('span', { class: 'du' }, t.duration ? fmt(t.duration) : '—'),
+    h('button', { class: 'ib fav' + (t.fav ? ' on' : ''), 'aria-label': t.fav ? 'Desfavoritar' : 'Favoritar', 'aria-pressed': !!t.fav, disabled: !inLib(t), onclick: (e) => { e.stopPropagation(); toggleFav(t); } }, icon('heart', 18)),
+    h('button', { class: 'ib', 'aria-label': 'Mais opções', onclick: (e) => { e.stopPropagation(); trackMenu(e, t, o, list, i); } }, icon('more', 18)));
+  return row;
+}
+function trackMenu(ev, t, o, list, i) {
+  const lt = A.tracks.get(t.id) || t; const items = [];
+  const guest = isGuest();
+  if (!guest) items.push({ label: 'Tocar agora', icon: 'play', fn: () => (list ? playTracks(list, i) : playTracks([t], 0)) });
+  if (!guest || A.session.canEnqueue()) { if (!guest) items.push({ label: 'Tocar em seguida', icon: 'next', fn: () => enqueue(t, true) }); items.push({ label: guest ? 'Adicionar à fila da sala' : 'Adicionar à fila', icon: 'list', fn: () => enqueue(t) }); }
+  items.push('-', { label: 'Adicionar à playlist…', icon: 'plus', fn: () => pickPlaylists(lt) });
+  items.push({ label: A.tracks.has(t.id) ? (lt.fav ? 'Remover dos favoritos' : 'Favoritar') : 'Salvar na biblioteca', icon: 'heart', fn: () => (A.tracks.has(t.id) ? toggleFav(lt) : addToLibrary(t).then(() => toast('Salva na biblioteca', 'ok'))) });
+  items.push({ label: 'Copiar link', icon: 'link', fn: async () => toast((await copyText(t.url)) ? 'Link copiado' : 'Não consegui copiar', 'ok') });
+  if (o.playlist) {
+    const p = o.playlist, idx = p.tracks.indexOf(t.id);
+    items.push('-', idx > 0 ? { label: 'Mover para cima', icon: 'ups', fn: async () => { [p.tracks[idx - 1], p.tracks[idx]] = [p.tracks[idx], p.tracks[idx - 1]]; await savePl(p); renderView(); } } : null,
+      idx < p.tracks.length - 1 ? { label: 'Mover para baixo', icon: 'downs', fn: async () => { [p.tracks[idx + 1], p.tracks[idx]] = [p.tracks[idx], p.tracks[idx + 1]]; await savePl(p); renderView(); } } : null,
+      { label: 'Remover desta playlist', icon: 'x', bad: true, fn: async () => { p.tracks = p.tracks.filter((x) => x !== t.id); await savePl(p); renderAll(); } });
+  }
+  if (A.tracks.has(t.id)) items.push('-', { label: 'Remover da biblioteca', icon: 'trash', bad: true, fn: () => removeFromLibrary(lt) });
+  popMenu(ev, items);
+}
+
+/* ============================ configurações ============================ */
+function settingsView() {
+  const s = S(); const guest = isGuest(); const fade = s ? s.settings.fade : A.settings.fade;
+  const v = h('div', null, h('h1', null, 'Configurações'));
+  const sec = (title, ...kids) => h('div', { class: 'sec' }, h('h2', { style: { marginBottom: '10px' } }, title), h('div', { class: 'box' }, kids));
+  const row = (label, small, ctl) => h('div', { class: 'sw' }, h('div', { class: 'l' }, h('b', null, label), small ? h('small', null, small) : null), ctl);
+  const name = h('input', { type: 'text', value: A.settings.name, maxlength: 24, placeholder: 'Seu nome', style: { maxWidth: '240px' }, onchange: (e) => { A.settings.name = C.cleanStr(e.target.value, 24); saveSettings(); } });
+  v.append(
+    sec('Perfil', row('Seu nome', 'Aparece para os amigos nas salas de escuta e na saudação.', name)),
+    sec('Aparência', row('Tema', 'O tema escuro é o padrão.', seg([['dark', 'Escuro'], ['light', 'Claro']], A.settings.theme, (x) => { A.settings.theme = x; saveSettings(); applyTheme(); renderView(); }))),
+    sec('Crossfade', row('Duração da transição', guest ? 'Em uma sala quem define é o anfitrião; vale para todos.' : 'A próxima faixa entra enquanto a atual sai; as duas tocam juntas durante a transição.',
+      seg([[0, 'Desativado'], [3, '3 s'], [5, '5 s'], [8, '8 s'], [10, '10 s'], [12, '12 s']], fade, (x) => setFade(x), guest)),
+    row('Curva da transição', 'Potência igual mantém o volume percebido constante; linear é a mais simples.', seg([['equal', 'Potência igual'], ['linear', 'Linear']], A.settings.curve, (x) => { A.settings.curve = x; A.engine.curve = x; saveSettings(); renderView(); }))),
+    sec('Reprodução', row('Reprodução automática', 'Quando a fila terminar, continua com músicas da sua biblioteca.', toggle(A.settings.autoplay, (x) => { A.settings.autoplay = x; saveSettings(); })),
+      row('Qualidade de áudio', 'Só se aplica a fontes que permitem escolher (YouTube); arquivos diretos tocam na qualidade original.', seg([['default', 'Automática'], ['hd720', 'Alta'], ['small', 'Economia']], A.settings.quality, (x) => { A.settings.quality = x; A.engine.setQuality(x); saveSettings(); renderView(); }))),
+    sec('Gerenciar biblioteca',
+      row('Exportar backup', 'Baixa um arquivo com músicas, playlists e configurações.', h('button', { class: 'btn', onclick: exportLib }, icon('down', 16), 'Exportar')),
+      row('Importar backup', 'Mescla o conteúdo de um backup com a sua biblioteca atual.', h('button', { class: 'btn', onclick: importLib }, icon('up', 16), 'Importar')),
+      row('Limpar histórico', null, h('button', { class: 'btn', onclick: async () => { A.history = []; await DB.clear('history'); renderAll(); toast('Histórico limpo'); } }, 'Limpar')),
+      row('Apagar tudo', 'Remove músicas, playlists e histórico deste navegador.', h('button', { class: 'btn bad', onclick: wipeAll }, icon('trash', 16), 'Apagar tudo')),
+      row('Armazenamento', DB.persistent ? 'IndexedDB: os dados permanecem após fechar o app.' : 'O navegador bloqueou o armazenamento permanente; os dados só duram esta sessão.', h('span', { class: 'chip ' + (DB.persistent ? 'ok' : 'warn') }, DB.persistent ? 'Permanente' : 'Temporário'))));
+  return v;
+}
+function setFade(x) {
+  A.settings.fade = x; saveSettings();
+  if (A.host) A.host.dispatch({ type: 'settings', patch: { fade: x } });
+  renderAll();
+}
+function exportLib() {
+  const data = { app: 'synctube', v: 1, at: Date.now(), tracks: allTracks(), playlists: A.playlists, settings: A.settings };
+  const a = h('a', { href: URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' })), download: 'synctube-backup.json' }); document.body.appendChild(a); a.click(); a.remove(); toast('Backup exportado', 'ok');
+}
+function importLib() {
+  const f = h('input', { type: 'file', accept: 'application/json,.json', onchange: async (e) => {
+    try {
+      const d = JSON.parse(await e.target.files[0].text()); if (d.app !== 'synctube') throw new Error('x'); let n = 0;
+      for (const t of d.tracks || []) { const b = C.sanitizeTrack(t); if (!b || A.tracks.has(b.id)) continue; const nt = { ...b, added: +t.added || Date.now(), fav: !!t.fav, plays: +t.plays || 0, lastPlayed: +t.lastPlayed || 0 }; A.tracks.set(nt.id, nt); await saveTrack(nt); n++; }
+      for (const p of d.playlists || []) { if (!p || typeof p.id !== 'string' || A.playlists.some((x) => x.id === p.id)) continue; const np = { id: 'p' + C.cleanStr(p.id, 20).replace(/\W/g, ''), name: C.cleanStr(p.name, 60) || 'Playlist', image: C.safeCover(p.image) && p.image.startsWith('data:') ? p.image : '', tracks: (p.tracks || []).filter((x) => A.tracks.has(x)), created: +p.created || Date.now() }; A.playlists.push(np); await savePl(np); }
+      renderAll(); toast(`Importadas ${pluralize(n, 'música', 'músicas')}`, 'ok');
+    } catch { toast('Arquivo de backup inválido.', 'bad'); }
+  } }); f.click();
+}
+async function wipeAll() {
+  if (!confirm('Apagar TODAS as músicas, playlists e histórico deste navegador? Isso não pode ser desfeito.')) return;
+  A.tracks.clear(); A.playlists = []; A.history = []; await Promise.all([DB.clear('tracks'), DB.clear('playlists'), DB.clear('history')]); renderAll(); toast('Tudo apagado');
+}
+
+/* ============================ SALA: Listen Together ============================ */
+function inviteLink(code) { return location.href.split('#')[0] + '#sala=' + code; }
+const fileProto = () => location.protocol === 'file:';
+
+function joinPrompt(code) {
+  const name = h('input', { type: 'text', maxlength: 24, value: A.settings.name, placeholder: 'Seu nome' });
+  const m = modal({ title: 'Entrar na sala', body: [h('p', { class: 'mute' }, ['Você foi convidado para a sala ', h('b', { style: { fontFamily: 'monospace', letterSpacing: '2px', color: 'var(--acc)' } }, code), '.']), h('label', { class: 'f' }, 'Como você quer aparecer?', name)],
+    actions: [h('button', { class: 'btn', onclick: () => m.close() }, 'Cancelar'), h('button', { class: 'btn pri', onclick: () => { A.settings.name = C.cleanStr(name.value, 24) || A.settings.name; saveSettings(); m.close(); joinRoom(code); } }, 'Entrar')] });
+  name.addEventListener('keydown', (e) => { if (e.key === 'Enter') m.el.querySelector('.btn.pri').click(); });
+}
+async function joinRoom(code) {
+  code = C.normCode(code); if (code.length < 4) return toast('Digite o código da sala.', 'bad');
+  if (isGuest()) return toast('Você já está em uma sala. Saia dela primeiro.', 'bad');
+  if (A.host.shared) return toast('Você está hospedando uma sala. Encerre-a para entrar em outra.', 'bad');
+  A.engine.resume();
+  if (A.host.state().playing) A.host.dispatch({ type: 'pause' });
+  A.host.follower.setEnabled(false);
+  const name = A.settings.name || 'Convidado ' + A.myId.slice(0, 3);
+  const g = new GuestSession({ engine: A.engine, code, myId: A.myId, name, token: A.token, allowPeer: true, hooks: {
+    onChange: () => renderAll(), onChat: () => updateChat(), onToast: (m) => toast(m, 'bad'), onLoadError: (t, e) => toast(`Não foi possível tocar “${t.title}”: ${e.message}`, 'bad'),
+    onTrackStart: (t) => recordPlay(t),
+    onEnded: (why) => { endGuest(why); },
+  } });
+  A.guest = g;
+  const wait = modal({ title: 'Entrando na sala…', body: [h('div', { class: 'row' }, h('span', { class: 'spinner' }), h('span', { id: 'joinmsg' }, 'Procurando a sala ' + code + '…'))], actions: [h('button', { class: 'btn', onclick: () => { g.leave(); } }, 'Cancelar')] });
+  const iv = setInterval(() => { const el = $('#joinmsg'); if (el && g.state === 'pending') el.textContent = 'Aguardando o anfitrião aprovar sua entrada…'; }, 400);
+  try {
+    await g.join(); A.session = g; clearInterval(iv); wait.close(); toast('Você entrou na sala', 'ok'); go('room'); renderAll();
+  } catch (e) {
+    clearInterval(iv); wait.close();
+    if (!g.closed) g._finish('left');
+    A.guest = null; A.host.follower.setEnabled(true); A.host.follower.apply(A.host.state()); A.session = A.host;
+    const msg = e.message === 'not-found' ? `Sala “${code}” não encontrada. Confira o código e veja se o anfitrião está com a sala aberta.` : e.message === 'timeout' ? 'A conexão online demorou demais. Verifique sua internet.' : e.message;
+    toast(msg, 'bad'); renderAll();
+  }
+}
+function endGuest(why) {
+  const wasIn = A.session === A.guest; A.guest = null;
+  if (wasIn || !A.session || A.session.type === 'guest') {
+    A.session = A.host; A.host.follower.setEnabled(true); A.host.follower.apply(A.host.state());
+    if (wasIn) toast(why === 'kicked' ? 'Você foi removido da sala.' : why === 'closed' ? 'O anfitrião encerrou a sala.' : why === 'lost' ? 'Conexão com a sala perdida.' : why === 'deny' ? 'O anfitrião recusou sua entrada.' : 'Você saiu da sala.', why === 'left' ? '' : 'bad');
+  }
+  renderAll();
+}
+async function createRoom(o) {
+  A.engine.resume(); const btn = o.btn; if (btn) btn.disabled = true;
+  try {
+    A.host.name = A.settings.name || 'Anfitrião';
+    const code = await A.host.openRoom({ name: o.name, visibility: o.visibility, mode: o.mode, guestsControl: o.guestsControl, kind: o.kind });
+    A.host.room.members.get(A.myId).name = A.settings.name || 'Anfitrião'; A.host.room.apply({ type: 'settings', patch: { fade: A.settings.fade } }, A.myId, Date.now());
+    A.host._publish(); toast('Sala criada! Código ' + code, 'ok'); renderAll();
+  } catch (e) { toast(e.message === 'code-in-use' ? 'Não consegui reservar um código. Tente de novo.' : e.message, 'bad'); if (btn) btn.disabled = false; }
+}
+function updateChat() {
+  const box = $('#chatl'); if (!box || !A.session) return; const msgs = A.session.chat();
+  const atEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 40; box.replaceChildren();
+  msgs.forEach((m) => box.appendChild(m.system ? h('div', { class: 'msg sys' }, m.text) : h('div', { class: 'msg' + (m.from === A.myId ? ' me' : '') }, h('b', { style: { color: m.color } }, m.name), m.text)));
+  if (atEnd) box.scrollTop = box.scrollHeight;
+}
+function stateOf(m) {
+  if (!m.online) return { cls: 'off', dot: '', txt: 'offline' };
+  if (m.ready === 'ok') return { cls: 'ok', dot: 'ok', txt: 'ouvindo' };
+  if (m.ready === 'blocked') return { cls: 'bad', dot: 'bad', txt: 'toque para ativar o som' };
+  if (m.ready === 'error') return { cls: 'bad', dot: 'bad', txt: 'erro ao carregar' };
+  return { cls: 'warn', dot: 'warn', txt: 'carregando…' };
+}
+function participantRow(m) {
+  const st = stateOf(m); const s = S(); const me = m.id === A.myId;
+  const sub = [h('span', null, st.txt)];
+  if (m.online && s && s.playing && m.ready === 'ok' && !m.host) sub.push(h('span', { class: 'dim' }, `±${Math.abs(m.drift || 0)} ms${m.rtt != null ? ' · ' + m.rtt + ' ms rtt' : ''}`));
+  return h('div', { class: 'pp' }, h('div', { class: 'av' + (m.online ? '' : ' off'), style: { background: m.color } }, (m.name || '?').slice(0, 1).toUpperCase(), h('span', { class: 'st ' + st.dot })),
+    h('div', { class: 'tx' }, h('b', null, m.name, me ? h('span', { class: 'chip' }, 'você') : null, m.host ? h('span', { title: 'Anfitrião', style: { color: 'var(--warn)', display: 'inline-flex' } }, icon('crown', 14)) : null), h('small', null, sub)),
+    m.online && m.ready === 'ok' && s && s.playing ? h('span', { class: 'eq' }, h('i'), h('i'), h('i')) : null,
+    A.session && A.session.isHost && !me ? h('button', { class: 'ib', title: 'Remover da sala', 'aria-label': 'Remover ' + m.name, onclick: () => { if (confirm(`Remover ${m.name} da sala?`)) A.host.kick(m.id); } }, icon('x', 16)) : null);
+}
+function syncInfo() {
+  const sess = A.session; if (!sess) return { cls: '', txt: '—' };
+  if (!sess.isHost) {
+    const c = sess.conn();
+    if (c.state === 'reconnecting') return { cls: 'bad', txt: 'Reconectando…' };
+    if (c.state !== 'ok') return { cls: 'warn', txt: 'Conectando…' };
+    const f = sess.follower; const s = S();
+    if (f.status === 'blocked') return { cls: 'bad', txt: 'Som bloqueado' };
+    if (f.status === 'error') return { cls: 'bad', txt: 'Erro ao carregar' };
+    if (f.status === 'loading') return { cls: 'warn', txt: 'Carregando / ajustando…' };
+    if (!s || !s.playing) return { cls: 'ok', txt: 'Conectado' };
+    const d = Math.abs(f.drift * 1000);
+    return d < 100 ? { cls: 'ok', txt: `Sincronizado (±${Math.round(d)} ms)` } : { cls: 'warn', txt: `Ajustando (${Math.round(d)} ms)` };
+  }
+  const n = sess.members().filter((m) => !m.host && m.online).length;
+  return { cls: 'ok', txt: n ? `${n} ${n === 1 ? 'ouvinte conectado' : 'ouvintes conectados'}` : 'Aguardando convidados' };
+}
+
+function roomView() {
+  const s = S(); const v = h('div'); const host = A.host; const sess = A.session;
+  if (!inRoom()) return roomLanding();
+  const st = s.settings; const amHost = sess.isHost; const ctl = sess.canControl(); const syn = syncInfo();
+  const link = inviteLink(st.code);
+  const hero = h('div', { class: 'room-hero' },
+    h('div', { class: 'col', style: { gap: '6px', minWidth: 0 } },
+      h('span', { class: 'chip ok', style: { alignSelf: 'flex-start' } }, amHost ? 'Você é o anfitrião' : 'Convidado'),
+      amHost ? h('input', { type: 'text', value: st.name, maxlength: 60, 'aria-label': 'Nome da sala', style: { fontSize: '26px', fontWeight: 800, background: 'transparent', border: '1px dashed transparent', padding: '2px 6px', marginLeft: '-6px', width: 'min(440px,100%)' }, onfocus: (e) => (e.target.style.borderColor = 'var(--line)'), onblur: (e) => (e.target.style.borderColor = 'transparent'), onchange: (e) => host.dispatch({ type: 'settings', patch: { name: e.target.value } }) }) : h('h1', null, st.name),
+      h('div', { class: 'row' }, h('span', { class: 'chip' }, st.mode === 'collab' ? 'Modo colaborativo' : 'Modo anfitrião'), h('span', { class: 'chip' }, st.visibility === 'public' ? 'Pública' : 'Privada'), h('span', { class: 'syncpill', id: 'syncpill' }, h('i', { class: 'dot ' + syn.cls }), syn.txt))),
+    h('div', { class: 'col', style: { gap: '10px', alignItems: 'flex-start' } },
+      h('div', { class: 'row', style: { gap: '14px' } }, h('div', null, h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800, letterSpacing: '1px' } }, 'CÓDIGO DA SALA'), h('div', { class: 'code', id: 'rcode' }, st.code)),
+        h('button', { class: 'btn sm', onclick: async () => toast((await copyText(st.code)) ? 'Código copiado' : 'Não consegui copiar', 'ok') }, icon('copy', 15), 'Copiar código')),
+      h('div', { class: 'row' }, h('button', { class: 'btn pri', onclick: async () => toast((await copyText(link)) ? 'Link de convite copiado' : 'Não consegui copiar', 'ok') }, icon('link', 16), 'Copiar link'), h('button', { class: 'btn', onclick: () => inviteModal(st) }, icon('share', 16), 'Convidar amigos'),
+        h('button', { class: 'btn ' + (amHost ? 'bad' : ''), onclick: () => (amHost ? (confirm('Encerrar a sala para todos?') && host.closeRoom()) : sess.leave()) }, icon('logout', 16), amHost ? 'Encerrar sala' : 'Sair da sala'))));
+  v.appendChild(hero);
+  if (amHost && fileProto()) v.appendChild(h('div', { class: 'note warn', style: { marginTop: '12px' } }, 'Você abriu o app direto do arquivo (file://). O código funciona para abas deste mesmo navegador, mas para amigos em outros lugares entrarem pelo link, hospede este arquivo HTML (ex.: GitHub Pages, Netlify) e abra por lá. O YouTube também exige que o app seja aberto por http(s).'));
+  if (amHost) v.appendChild(h('div', { class: 'note', style: { marginTop: '12px' } }, 'Seu navegador é o servidor desta sala (a referência do tempo e da fila). Mantenha esta aba aberta; se você fechar, a sala termina para todos.'));
+
+  const left = h('div', { class: 'col', style: { gap: '20px' } }); const right = h('div', { class: 'col', style: { gap: '20px' } });
+  const c = cur();
+  left.appendChild(h('div', { class: 'box' }, h('div', { class: 'np-big' }, cover(c, ''), h('div', { class: 'tx' }, h('span', { class: 'dim', style: { fontSize: '11px', fontWeight: 800, letterSpacing: '1px' } }, s.playing ? 'TOCANDO AGORA' : 'EM PAUSA'), h('div', { class: 'tt' }, c ? c.title : 'Nada tocando'), h('div', { class: 'mute' }, c ? c.artist : 'Adicione músicas à fila para começar'),
+    c ? h('div', { class: 'dim', style: { fontSize: '12px' } }, 'Adicionada por ' + memberName(c.by)) : null)),
+    h('div', { class: 'row', style: { marginTop: '16px', justifyContent: 'center' } },
+      h('button', { class: 'ib', 'aria-label': 'Anterior', disabled: !ctl, onclick: () => act({ type: 'prev' }) }, icon('prev', 20)),
+      h('button', { class: 'big-play', 'aria-label': s.playing ? 'Pausar' : 'Tocar', disabled: !ctl, onclick: togglePlay }, icon(s.playing ? 'pause' : 'play', 26)),
+      h('button', { class: 'ib', 'aria-label': 'Próxima', disabled: !ctl, onclick: () => act({ type: 'next' }) }, icon('next', 20))),
+    !ctl ? h('p', { class: 'dim', style: { textAlign: 'center', fontSize: '12px', marginTop: '10px' } }, 'Só o anfitrião controla a reprodução.') : null));
+  // participantes
+  const members = sess.members().filter((m) => m.online || m.host).concat(sess.members().filter((m) => !m.online && !m.host));
+  left.appendChild(h('div', { class: 'box' }, h('div', { class: 'sec-h', style: { marginBottom: '6px' } }, h('h3', null, `Participantes (${sess.members().filter((m) => m.online).length})`)), h('div', { class: 'pp-list', id: 'plist' }, members.map(participantRow))));
+  if (amHost) left.appendChild(roomSettingsBox(st));
+  // fila + chat
+  right.appendChild(queueBox(s, sess, ctl));
+  right.appendChild(h('div', { class: 'box' }, h('div', { class: 'sec-h', style: { marginBottom: '6px' } }, h('h3', null, 'Chat da sala')), h('div', { class: 'chat' }, h('div', { class: 'chat-l', id: 'chatl', role: 'log', 'aria-live': 'polite' }),
+    h('form', { class: 'chat-f', onsubmit: (e) => { e.preventDefault(); const i = e.target.elements.t; const t = i.value.trim(); if (t) { sess.sendChat(t); i.value = ''; } } }, h('input', { name: 't', type: 'text', maxlength: 300, placeholder: 'Mensagem…', autocomplete: 'off', 'aria-label': 'Mensagem' }), h('button', { class: 'btn pri', 'aria-label': 'Enviar' }, icon('send', 16))))));
+  v.appendChild(h('div', { class: 'room-grid' }, left, right)); setTimeout(() => { updateChat(); const b = $('#chatl'); if (b) b.scrollTop = b.scrollHeight; }, 0);
+  return v;
+}
+function memberName(id) { const m = A.session && A.session.members().find((x) => x.id === id); return m ? (id === A.myId ? 'você' : m.name) : '—'; }
+function roomSettingsBox(st) {
+  const host = A.host;
+  return h('div', { class: 'box' }, h('h3', { style: { marginBottom: '6px' } }, 'Controles do anfitrião'),
+    h('div', { class: 'sw' }, h('div', { class: 'l' }, h('b', null, 'Modo da sala'), h('small', null, st.mode === 'collab' ? 'Todos adicionam músicas e votam na ordem da fila.' : 'Só você controla e adiciona músicas.')), seg([['host', 'Anfitrião'], ['collab', 'Colaborativo']], st.mode, (x) => host.dispatch({ type: 'settings', patch: { mode: x } }))),
+    h('div', { class: 'sw' }, h('div', { class: 'l' }, h('b', null, 'Convidados controlam a reprodução'), h('small', null, 'Play, pause, avançar, voltar e pular no tempo. Só no modo colaborativo.')), toggle(st.guestsControl, (x) => host.dispatch({ type: 'settings', patch: { guestsControl: x } }), st.mode !== 'collab')),
+    h('div', { class: 'sw' }, h('div', { class: 'l' }, h('b', null, 'Visibilidade'), h('small', null, st.visibility === 'public' ? 'Pública: quem tiver o código entra direto.' : 'Privada: você aprova cada pessoa que pedir para entrar.')), seg([['private', 'Privada'], ['public', 'Pública']], st.visibility, (x) => host.dispatch({ type: 'settings', patch: { visibility: x } }))),
+    h('div', { class: 'sw' }, h('div', { class: 'l' }, h('b', null, 'Crossfade da sala'), h('small', null, 'Mesma duração e mesmo instante de início para todos.')), seg([[0, 'Off'], [3, '3 s'], [5, '5 s'], [8, '8 s'], [10, '10 s'], [12, '12 s']], st.fade, (x) => setFade(x))));
+}
+function queueBox(s, sess, ctl) {
+  const collab = s.settings.mode === 'collab'; const wrap = h('div', { class: 'box' });
+  const add = sess.canEnqueue() ? h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: () => libPicker() }, icon('library', 15), 'Da biblioteca'), h('button', { class: 'btn sm', onclick: () => addMusicModal() }, icon('link', 15), 'Por link')) : null;
+  wrap.appendChild(h('div', { class: 'sec-h', style: { marginBottom: '8px' } }, h('h3', null, `Playlist compartilhada (${s.queue.length})`), add));
+  if (!s.queue.length) { wrap.appendChild(h('p', { class: 'mute', style: { padding: '8px 0' } }, sess.canEnqueue() ? 'A fila está vazia. Adicione músicas da biblioteca ou cole um link.' : 'Aguardando o anfitrião adicionar músicas.')); return wrap; }
+  const list = h('div'); wrap.appendChild(list);
+  s.queue.forEach((q, i) => {
+    const isCur = i === s.index; const mine = q.by === A.myId; const voted = q.votes.includes(A.myId);
+    const row = h('div', { class: 'qrow' + (isCur ? ' cur' : '') + (i < s.index ? ' past' : ''), 'data-i': i, draggable: ctl ? 'true' : null, ondblclick: () => ctl && act({ type: 'jump', qid: q.qid }) },
+      cover(q), h('div', { style: { minWidth: 0 } }, h('span', { class: 'tt' }, q.title), h('span', { class: 'ar' }, q.artist + ' · por ' + memberName(q.by))),
+      h('div', { class: 'ac' }, isCur ? h('span', { class: 'eq' + (s.playing ? '' : ' paused') }, h('i'), h('i'), h('i')) : null,
+        collab && i > s.index ? h('button', { class: 'vote' + (voted ? ' on' : ''), 'aria-pressed': voted, title: 'Votar para tocar antes', onclick: () => act({ type: 'vote', qid: q.qid }) }, icon('ups', 14), q.votes.length) : null,
+        ctl && !isCur ? h('button', { class: 'ib', 'aria-label': 'Tocar agora', onclick: () => act({ type: 'jump', qid: q.qid }) }, icon('play', 16)) : null,
+        (ctl || mine) ? h('button', { class: 'ib', 'aria-label': 'Remover da fila', onclick: () => act({ type: 'remove', qid: q.qid }) }, icon('x', 16)) : null));
+    list.appendChild(row);
+  });
+  if (ctl) makeSortable(list, '.qrow', (from, to) => act({ type: 'move', qid: s.queue[from].qid, to }));
+  return wrap;
+}
+function libPicker() {
+  const q = h('input', { type: 'search', placeholder: 'Buscar na biblioteca' }); const box = h('div', { class: 'pickwrap', style: { maxHeight: '380px' } });
+  const sel = new Set();
+  const draw = () => {
+    box.replaceChildren(); const l = sortTracks(allTracks().filter((t) => matches(t, q.value)), 'name');
+    if (!l.length) box.appendChild(h('p', { class: 'mute', style: { padding: '10px' } }, 'Nenhuma música na biblioteca.'));
+    l.forEach((t) => { const cb = h('input', { type: 'checkbox', onchange: (e) => (e.target.checked ? sel.add(t.id) : sel.delete(t.id)) }); cb.checked = sel.has(t.id); box.appendChild(h('label', { class: 'pickrow' }, cb, cover(t), h('div', { class: 'tx' }, h('b', null, t.title), h('small', null, t.artist)))); });
+  };
+  q.addEventListener('input', draw); draw();
+  const m = modal({ title: 'Adicionar à playlist da sala', body: [q, box], actions: [h('button', { class: 'btn', onclick: () => m.close() }, 'Cancelar'), h('button', { class: 'btn pri', onclick: () => { [...sel].forEach((id) => A.session.dispatch({ type: 'enqueue', track: pub(A.tracks.get(id)) })); m.close(); if (sel.size) toast(pluralize(sel.size, 'música adicionada', 'músicas adicionadas'), 'ok'); } }, 'Adicionar')] });
+}
+function inviteModal(st) {
+  const link = inviteLink(st.code); const text = `Vem ouvir música comigo no SyncTube Music! Sala “${st.name}” — código ${st.code}\n${link}`;
+  const m = modal({ title: 'Convidar amigos', body: [
+    h('div', { class: 'box row', style: { justifyContent: 'space-between' } }, h('div', null, h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800 } }, 'CÓDIGO'), h('div', { class: 'code' }, st.code)), h('button', { class: 'btn', onclick: async () => toast((await copyText(st.code)) ? 'Código copiado' : 'Erro', 'ok') }, icon('copy', 16), 'Copiar')),
+    h('label', { class: 'f' }, 'Link de convite', h('div', { class: 'row', style: { flexWrap: 'nowrap' } }, h('input', { type: 'text', readonly: true, value: link, onfocus: (e) => e.target.select() }), h('button', { class: 'btn', onclick: async () => toast((await copyText(link)) ? 'Link copiado' : 'Erro', 'ok') }, icon('copy', 16)))),
+    h('div', { class: 'row' }, h('a', { class: 'btn', target: '_blank', rel: 'noopener noreferrer', href: 'https://wa.me/?text=' + encodeURIComponent(text) }, 'WhatsApp'),
+      h('a', { class: 'btn', target: '_blank', rel: 'noopener noreferrer', href: 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent('Vem ouvir música comigo! Código ' + st.code) }, 'Telegram'),
+      h('button', { class: 'btn', onclick: async () => toast((await copyText(text)) ? 'Mensagem copiada — cole no Discord ou onde quiser' : 'Erro', 'ok') }, 'Discord / outros (copiar mensagem)'),
+      navigator.share ? h('button', { class: 'btn', onclick: () => navigator.share({ title: 'SyncTube Music', text, url: link }).catch(() => {}) }, icon('share', 16), 'Compartilhar…') : null),
+    fileProto() ? h('div', { class: 'note warn' }, 'O app está aberto como arquivo local; o link só funciona em outros dispositivos se este HTML estiver hospedado online. O código vale para abas neste navegador.') : null] });
+}
+function roomLanding() {
+  const v = h('div', null, h('h1', null, 'Ouvir junto'), h('p', { class: 'sub', style: { maxWidth: '640px' } }, 'Crie uma sala e escute em tempo real com amigos em qualquer lugar: mesma música, mesmo instante, fila compartilhada e chat.'));
+  const name = h('input', { type: 'text', value: 'Minha sala', maxlength: 60 });
+  let vis = 'private', mode = 'host', gc = false, kind = 'peer';
+  const box = h('div', { class: 'box col' }); const redraw = () => {
+    box.replaceChildren(h('h2', null, 'Criar sala'), h('label', { class: 'f' }, 'Nome da sala', name),
+      h('div', { class: 'sw' }, h('div', { class: 'l' }, h('b', null, 'Visibilidade'), h('small', null, vis === 'public' ? 'Pública: quem tiver o código entra direto.' : 'Privada: você aprova cada pedido de entrada.')), seg([['private', 'Privada'], ['public', 'Pública']], vis, (x) => { vis = x; redraw(); })),
+      h('div', { class: 'sw' }, h('div', { class: 'l' }, h('b', null, 'Modo'), h('small', null, mode === 'collab' ? 'Colaborativo: todos adicionam músicas e votam na fila.' : 'Anfitrião: só você controla a reprodução.')), seg([['host', 'Anfitrião'], ['collab', 'Colaborativo']], mode, (x) => { mode = x; if (x === 'host') gc = false; redraw(); })),
+      h('div', { class: 'sw' }, h('div', { class: 'l' }, h('b', null, 'Convidados podem controlar a reprodução'), h('small', null, 'Play, pause, pular. Disponível no modo colaborativo.')), toggle(gc, (x) => (gc = x), mode !== 'collab')),
+      h('div', { class: 'sw' }, h('div', { class: 'l' }, h('b', null, 'Conexão'), h('small', null, kind === 'peer' ? 'Online: amigos em outros lugares (WebRTC; usa o serviço público do PeerJS só para o primeiro contato).' : 'Neste navegador: só abas do mesmo navegador, sem internet. Bom para testar.')), seg([['peer', 'Online'], ['local', 'Este navegador']], kind, (x) => { kind = x; redraw(); })),
+      (() => { const b = h('button', { class: 'btn pri', onclick: () => createRoom({ name: name.value, visibility: vis, mode, guestsControl: gc, kind, btn: b }) }, icon('users', 18), 'Criar sala'); return b; })());
+  }; redraw();
+  const code = h('input', { type: 'text', placeholder: 'Ex.: K7M2QX', maxlength: 12, style: { fontFamily: 'monospace', letterSpacing: '4px', fontSize: '20px', textTransform: 'uppercase' }, 'aria-label': 'Código da sala' });
+  const myname = h('input', { type: 'text', maxlength: 24, value: A.settings.name, placeholder: 'Seu nome', onchange: (e) => { A.settings.name = C.cleanStr(e.target.value, 24); saveSettings(); } });
+  const join = h('div', { class: 'box col' }, h('h2', null, 'Entrar em uma sala'), h('label', { class: 'f' }, 'Código', code), h('label', { class: 'f' }, 'Seu nome', myname),
+    h('button', { class: 'btn pri', onclick: () => { A.settings.name = C.cleanStr(myname.value, 24); saveSettings(); joinRoom(code.value); } }, 'Entrar'), h('p', { class: 'dim', style: { fontSize: '12px' } }, 'Ou abra o link de convite que seu amigo enviou.'));
+  code.addEventListener('keydown', (e) => { if (e.key === 'Enter') join.querySelector('.btn.pri').click(); });
+  v.appendChild(h('div', { class: 'sec', style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '20px', alignItems: 'start' } }, box, join));
+  v.appendChild(h('div', { class: 'sec' }, h('div', { class: 'note' }, ['Como funciona: o navegador do anfitrião mantém o estado da sala (música, posição, play/pause, fila, permissões) e é a referência de tempo; cada pessoa toca o áudio no próprio aparelho e corrige a posição continuamente (ajuste fino de velocidade ou salto). Para o YouTube todos precisam conseguir abrir o vídeo. ', h('b', null, 'A sala existe enquanto a aba do anfitrião estiver aberta.')])));
+  return v;
+}
+
+/* ============================ player inferior ============================ */
+const P = {};
+function buildPlayer() {
+  const bar = $('#bar'); bar.replaceChildren();
+  P.cv = h('div', { id: 'pcv' }); P.tt = h('div', { class: 'tt' }, 'Nada tocando'); P.ar = h('div', { class: 'ar' }, 'Escolha uma música'); P.fav = h('button', { class: 'ib fav', 'aria-label': 'Favoritar', onclick: () => { const c = cur(); if (c) (inLib(c) ? toggleFav(A.tracks.get(c.id)) : addToLibrary(c).then(() => toast('Salva na biblioteca', 'ok'))); } }, icon('heart', 18));
+  P.sh = h('button', { class: 'ib hm', 'aria-label': 'Aleatório', onclick: () => act({ type: 'shuffle', on: !S().shuffle }) }, icon('shuffle', 18));
+  P.prev = h('button', { class: 'ib', 'aria-label': 'Anterior', onclick: () => act({ type: 'prev' }) }, icon('prev', 20));
+  P.play = h('button', { class: 'big-play', style: { width: '40px', height: '40px' }, 'aria-label': 'Tocar', onclick: togglePlay });
+  P.next = h('button', { class: 'ib', 'aria-label': 'Próxima', onclick: () => act({ type: 'next' }) }, icon('next', 20));
+  P.rep = h('button', { class: 'ib hm', 'aria-label': 'Repetir', onclick: () => { const m = S().repeat; act({ type: 'repeat', mode: m === 'off' ? 'all' : m === 'all' ? 'one' : 'off' }); } });
+  P.cur = h('span', null, '0:00'); P.dur = h('span', null, '0:00');
+  P.fill = h('div', { class: 'fill' }); P.xfz = h('div', { class: 'xfz' }); P.knob = h('div', { class: 'knob' });
+  P.range = h('input', { type: 'range', min: 0, max: 1000, value: 0, 'aria-label': 'Posição da música', oninput: () => { A.seeking = true; const d = progDur(); P.cur.textContent = fmt((P.range.value / 1000) * d); setProg(P.range.value / 1000); }, onchange: () => { const d = progDur(); A.seeking = false; if (d) act({ type: 'seek', pos: (P.range.value / 1000) * d }); } });
+  P.range.addEventListener('pointerup', () => setTimeout(() => (A.seeking = false), 50));
+  P.vol = h('input', { type: 'range', min: 0, max: 100, value: Math.round(A.vol * 100), 'aria-label': 'Volume', oninput: () => { A.vol = P.vol.value / 100; A.muted = false; applyVol(); } });
+  P.mute = h('button', { class: 'ib', 'aria-label': 'Silenciar', onclick: () => { A.muted = !A.muted; applyVol(); } });
+  P.xf = h('button', { class: 'xfpill', title: 'Duração do crossfade', onclick: () => go('settings') });
+  P.sync = h('span', { class: 'syncpill', style: { display: 'none' } });
+  bar.append(
+    h('div', { class: 'np' }, P.cv, h('div', { class: 'tx' }, P.tt, P.ar), P.fav),
+    h('div', { class: 'pc' }, h('div', { class: 'pc-b' }, P.sh, P.prev, P.play, P.next, P.rep), h('div', { class: 'pc-p' }, P.cur, h('div', { class: 'pr' }, h('div', { class: 'trk' }, P.fill, P.xfz), P.knob, P.range), P.dur)),
+    h('div', { class: 'pb-r' }, P.sync, P.xf, h('div', { class: 'vol' }, P.mute, P.vol)));
+}
+function applyVol() { A.engine.setVolume(A.muted ? 0 : A.vol); P.vol.value = Math.round((A.muted ? 0 : A.vol) * 100); P.vol.style.setProperty('--p', P.vol.value + '%'); P.mute.replaceChildren(icon(A.muted || A.vol === 0 ? 'mute' : 'volume', 18)); DB.kvSet('vol', A.vol); }
+function progDur() { const c = cur(); return (c && c.duration) || A.engine.getDuration() || 0; }
+function setProg(p) { P.fill.style.width = p * 100 + '%'; P.knob.style.left = p * 100 + '%'; P.range.style.setProperty('--p', p * 100 + '%'); }
+function renderPlayer() {
+  const s = S(); const c = cur(); const guest = isGuest(); const ctl = canCtl();
+  const tcv = cover(c, ''); tcv.style.width = tcv.style.height = '56px'; P.cv.replaceChildren(tcv); P.cv.style.display = 'contents';
+  P.tt.textContent = c ? c.title : 'Nada tocando'; P.ar.textContent = c ? c.artist : (guest ? 'Aguardando o anfitrião' : 'Escolha uma música');
+  P.play.replaceChildren(icon(s && s.playing ? 'pause' : 'play', 22)); P.play.setAttribute('aria-label', s && s.playing ? 'Pausar' : 'Tocar');
+  for (const b of [P.play, P.prev, P.next, P.sh, P.rep]) b.disabled = !ctl || (b === P.play && false);
+  P.range.disabled = !ctl || !c;
+  P.sh.classList.toggle('on', !!(s && s.shuffle)); P.sh.setAttribute('aria-pressed', !!(s && s.shuffle));
+  const rm = s ? s.repeat : 'off'; P.rep.replaceChildren(icon('repeat', 18)); P.rep.classList.toggle('on', rm !== 'off'); P.rep.setAttribute('aria-pressed', rm !== 'off'); P.rep.title = rm === 'one' ? 'Repetindo a música' : rm === 'all' ? 'Repetindo a fila' : 'Repetir';
+  if (rm === 'one') P.rep.appendChild(h('b', { style: { position: 'absolute', fontSize: '9px', marginTop: '1px' } }, '1'));
+  const lt = c && A.tracks.get(c.id); P.fav.classList.toggle('on', !!(lt && lt.fav)); P.fav.disabled = !c; P.fav.title = lt ? (lt.fav ? 'Remover dos favoritos' : 'Favoritar') : 'Salvar na biblioteca e favoritar';
+  const fade = s ? s.settings.fade : A.settings.fade; P.xf.textContent = '⇄ ' + (fade ? 'Crossfade ' + fade + ' s' : 'Crossfade off'); P.xf.classList.toggle('on', fade > 0);
+  if (inRoom()) { const sy = syncInfo(); P.sync.style.display = ''; P.sync.replaceChildren(h('i', { class: 'dot ' + sy.cls }), sy.txt); } else P.sync.style.display = 'none';
+  P.dur.textContent = fmt(progDur());
+  if ('mediaSession' in navigator && c) {
+    try { navigator.mediaSession.metadata = new MediaMetadata({ title: c.title, artist: c.artist, album: c.album || 'SyncTube Music', artwork: c.cover && /^https?:/.test(c.cover) ? [{ src: c.cover }] : [] }); navigator.mediaSession.playbackState = s.playing ? 'playing' : 'paused'; } catch {}
+  }
+  document.title = c ? `${s.playing ? '▶ ' : ''}${c.title} — SyncTube Music` : 'SyncTube Music';
+}
+function tickProgress() {
+  const s = S(); if (!s || !P.range) return; const d = progDur();
+  const f = A.session && A.session.follower; let pos = s.pos;
+  if (s.playing && f) pos = f.expected(); if (s.playing && s.index >= 0 && d) pos = Math.min(d, pos);
+  if (!A.seeking) { const p = d ? Math.max(0, Math.min(1, pos / d)) : 0; setProg(p); P.range.value = Math.round(p * 1000); P.cur.textContent = fmt(pos); }
+  P.dur.textContent = fmt(d);
+  // crossfade
+  const now = A.session && A.session.isHost ? Date.now() : (A.session && A.session.clock ? A.session.clock.serverNow() : Date.now());
+  const xf = s.xf; const act_ = xf && xf.until > now && s.playing; P.xf.classList.toggle('act', !!act_);
+  if (act_) { P.xf.textContent = '⇄ Transição ' + Math.ceil((xf.until - now) / 1000) + ' s'; }
+  else if (s.playing && s.next && d) { const left = (s.next.startAt - now) / 1000; P.xfz.style.width = d ? (s.next.fade / d) * 100 + '%' : 0; if (left < 0 || left > 1e6) P.xfz.style.width = 0; }
+  else P.xfz.style.width = 0;
+  if (!act_) { const fade = s.settings.fade; const tx = '⇄ ' + (fade ? 'Crossfade ' + fade + ' s' : 'Crossfade off'); if (P.xf.textContent !== tx) P.xf.textContent = tx; }
+  if (s.playing && s.next && d) P.xfz.style.width = (s.next.fade / d) * 100 + '%';
+  if (inRoom() && A.view.name === 'room') { const el = $('#syncpill'); if (el) { const sy = syncInfo(); el.replaceChildren(h('i', { class: 'dot ' + sy.cls }), sy.txt); } }
+}
+
+/* ============================ render ============================ */
+let rvQueued = false;
+function renderView() {
+  const root = $('#view'); const name = A.view.name; let el;
+  const keep = $('#view').parentElement.scrollTop;
+  try { el = VIEWS[name](A.view.arg); } catch (e) { console.error(e); el = h('div', { class: 'note bad' }, 'Erro ao renderizar: ' + e.message); }
+  root.replaceChildren(el); $('#main').scrollTop = keep;
+  document.querySelectorAll('#side .nav button, .bn button').forEach((b) => { const on = b.dataset.v === name || (name === 'playlist' && b.dataset.v === 'playlists'); b.classList.toggle('on', on); on ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'); });
+}
+function renderSide() {
+  const pls = $('#sidepl'); pls.replaceChildren(...A.playlists.map((p) => { const c = plCover(p, ''); c.style.cssText = 'width:34px;height:34px;border-radius:6px'; return h('button', { onclick: () => go('playlist', p.id), title: p.name }, c, h('span', { class: 't' }, p.name)); }));
+  const live = inRoom(); document.querySelectorAll('[data-v="room"] .live-dot').forEach((d) => (d.style.display = live ? '' : 'none')); const rq = A.reqs.size;
+  document.querySelectorAll('[data-v="room"] .badge').forEach((b) => { b.style.display = rq ? '' : 'none'; b.textContent = rq; });
+}
+function renderAll() {
+  if (!A.ready) return;
+  if (rvQueued) return; rvQueued = true;
+  requestAnimationFrame(() => {
+    rvQueued = false;
+    if (A.view.name === 'room' && document.activeElement && document.activeElement.closest && document.activeElement.closest('#view') && document.activeElement.tagName === 'INPUT' && inRoom() && document.activeElement.name !== 't') { renderPlayer(); renderSide(); updateChat(); return; }
+    const chatInput = $('#view .chat-f input'); const draft = chatInput ? chatInput.value : ''; const had = chatInput && document.activeElement === chatInput;
+    renderView(); renderPlayer(); renderSide(); renderRequests();
+    if (draft) { const ci = $('#view .chat-f input'); if (ci) { ci.value = draft; if (had) ci.focus(); } }
+  });
+}
+function renderRequests() {
+  const box = $('#reqs'); box.replaceChildren();
+  A.reqs.forEach((r, cid) => box.appendChild(h('div', { class: 'req' }, h('div', null, h('b', null, r.name), ' quer entrar na sua sala.'), h('div', { class: 'row' }, h('button', { class: 'btn pri sm', onclick: () => { A.host.answer(cid, true); A.reqs.delete(cid); renderAll(); } }, 'Permitir'), h('button', { class: 'btn sm', onclick: () => { A.host.answer(cid, false); A.reqs.delete(cid); renderAll(); } }, 'Recusar')))));
+}
+function recordPlay(t) {
+  const now = Date.now(); if (A.lastQid === t.qid && now - (A.lastQidAt || 0) < 4000) return; A.lastQid = t.qid; A.lastQidAt = now;
+  const b = C.sanitizeTrack(t); if (!b) return; const lt = A.tracks.get(b.id);
+  if (lt) { lt.plays = (lt.plays || 0) + 1; lt.lastPlayed = now; saveTrack(lt); }
+  const entry = { at: now, track: { ...b, cover: b.cover && b.cover.length < 3000 ? b.cover : (lt ? lt.cover : '') } }; A.history.push(entry); DB.put('history', entry);
+  if (A.history.length > 200) { const old = A.history.sort((a, b2) => a.at - b2.at).splice(0, A.history.length - 200); old.forEach((o) => DB.del('history', o.at)); }
+}
+async function autoplayFill() {
+  const s = A.host.state(); if (!A.settings.autoplay || inRoom() && !A.host.shared === false && false) return;
+  const used = new Set(s.queue.map((q) => q.id)); const cand = allTracks().filter((t) => !used.has(t.id));
+  const pool = cand.length ? cand : allTracks(); if (!pool.length) return;
+  const rc = recommendations().filter((t) => !used.has(t.id)); const picks = (rc.length ? rc : pool).slice(0, 4);
+  picks.forEach((t) => A.host.dispatch({ type: 'enqueue', track: pub(t) }));
+  const i = s.queue.length; const ns = A.host.state(); if (ns.queue.length > i) A.host.dispatch({ type: 'jump', qid: ns.queue[i].qid });
+}
+
+/* ============================ inicialização ============================ */
+async function init() {
+  try { A.myId = sessionStorage.getItem('stm-id') || ''; A.token = sessionStorage.getItem('stm-tk') || ''; } catch {}
+  if (!/^[a-z0-9]{10}$/.test(A.myId)) { A.myId = C.rid(10); A.token = C.rid(16); try { sessionStorage.setItem('stm-id', A.myId); sessionStorage.setItem('stm-tk', A.token); } catch {} }
+  await DB.init();
+  const [tr, pl, hi, st, vol] = await Promise.all([DB.getAll('tracks'), DB.getAll('playlists'), DB.getAll('history'), DB.kvGet('settings', null), DB.kvGet('vol', 0.8)]);
+  tr.forEach((t) => A.tracks.set(t.id, t)); A.playlists = pl.sort((a, b) => a.created - b.created); A.history = hi; if (st) Object.assign(A.settings, st); A.vol = typeof vol === 'number' ? vol : 0.8;
+  applyTheme();
+  document.body.append(h('div', { id: 'toasts', 'aria-live': 'polite' }), h('div', { id: 'reqs' }));
+  $('#side .logo').after(h('nav', { class: 'nav', 'aria-label': 'Principal' }, NAV.filter((n) => n[0] !== 'settings').map(([id, label, ic]) => navBtn(id, label, ic))));
+  $('#side').appendChild(h('div', { class: 'side-sep' })); $('#side').appendChild(h('div', { class: 'side-h' }, 'Suas playlists')); $('#side').appendChild(h('div', { class: 'side-pl', id: 'sidepl' }));
+  $('#side').appendChild(h('div', { style: { flex: 1 } })); $('#side').appendChild(h('div', { class: 'nav' }, navBtn('settings', 'Configurações', 'settings')));
+  const bn = $('.bn'); [['home', 'Início', 'home'], ['search', 'Buscar', 'search'], ['library', 'Biblioteca', 'library'], ['room', 'Juntos', 'users'], ['settings', 'Ajustes', 'settings']].forEach(([id, l, ic]) => bn.appendChild(h('button', { 'data-v': id, onclick: () => go(id) }, icon(ic, 22), l, id === 'room' ? h('span', { class: 'live live-dot', style: { display: 'none' } }) : null)));
+  $('#addbtn') && $('#addbtn').remove();
+  $('#side .nav').before(h('div', { style: { padding: '0 4px 12px' } }, h('button', { class: 'btn pri', style: { width: '100%', justifyContent: 'center' }, onclick: () => addMusicModal() }, icon('plus', 18), 'Adicionar música')));
+  const fab = h('button', { class: 'btn pri', id: 'fab', 'aria-label': 'Adicionar música', title: 'Adicionar música', style: { display: 'none' }, onclick: () => addMusicModal() }, icon('plus', 24)); document.body.appendChild(fab);
+  const mq = matchMedia('(max-width:820px)'); const fabv = () => (fab.style.display = mq.matches ? 'grid' : 'none'); mq.addEventListener('change', fabv); fabv();
+
+  A.engine = new Engine({ ytHost: $('#ytcard') }); A.engine.curve = A.settings.curve; A.engine.setQuality(A.settings.quality);
+  A.engine.cb.onActiveKind = (k) => $('#ytcard').classList.toggle('off', k !== 'youtube');
+  buildPlayer(); applyVol();
+  A.host = new HostSession({ engine: A.engine, myId: A.myId, name: A.settings.name || 'Você', fade: A.settings.fade, hooks: {
+    onChange: () => { onHostChange(); renderAll(); }, onChat: () => updateChat(), onLoadError: (t, e) => toast(`Não foi possível tocar “${t.title}”: ${e.message}`, 'bad'), onTrackStart: (t) => recordPlay(t),
+    onJoinRequest: (r) => { A.reqs.set(r.cid, r); renderAll(); toast(`${r.name} quer entrar na sala`); }, onJoinCancel: (cid) => { A.reqs.delete(cid); renderAll(); } } });
+  A.session = A.host;
+  A.engine.cb.onBlocked = () => { $('#unlock').classList.add('on'); };
+  A.engine.cb.onError = (t, e) => toast(`Erro de reprodução: ${e.message}`, 'bad');
+  $('#unlock button').onclick = () => { $('#unlock').classList.remove('on'); A.engine.resume(); A.session.follower.kick(); };
+  setInterval(tickProgress, 250);
+  document.addEventListener('keydown', (e) => {
+    if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); } else if (e.key === 'ArrowRight' && e.shiftKey) act({ type: 'next' }); else if (e.key === 'ArrowLeft' && e.shiftKey) act({ type: 'prev' }); else if (e.key === 'm') { A.muted = !A.muted; applyVol(); }
+  });
+  if ('mediaSession' in navigator) { const ms = navigator.mediaSession; try { ms.setActionHandler('play', () => act({ type: 'play' })); ms.setActionHandler('pause', () => act({ type: 'pause' })); ms.setActionHandler('previoustrack', () => act({ type: 'prev' })); ms.setActionHandler('nexttrack', () => act({ type: 'next' })); ms.setActionHandler('seekto', (d) => act({ type: 'seek', pos: d.seekTime })); } catch {} }
+  addEventListener('pagehide', () => { if (isGuest()) A.session.leave(); });
+  addEventListener('hashchange', route);
+  A.ready = true; await route();
+  if (fileProto()) setTimeout(() => toast('Aberto como arquivo local: músicas do YouTube e convites por link exigem abrir o app por http(s) (localhost ou hospedagem).', ''), 1200);
+  window.__app = { A, act, playTracks, addToLibrary, joinRoom, createRoom, C, go, S };   // gancho para testes automatizados
+}
+function onHostChange() {
+  const s = A.host.state(); const playing = s.playing;
+  if (A.lastPlaying && !playing && s.pos === 0 && s.index >= 0 && s.index === s.queue.length - 1 && !inRoom()) autoplayFill();
+  A.lastPlaying = playing;
+}
+function navBtn(id, label, ic) {
+  return h('button', { 'data-v': id, onclick: () => go(id) }, icon(ic, 20), label, id === 'room' ? [h('span', { class: 'live live-dot', style: { display: 'none' } }), h('span', { class: 'badge', style: { display: 'none' } })] : null);
+}
+window.addEventListener('error', (e) => console.error(e.error || e.message));
+document.addEventListener('DOMContentLoaded', () => init().catch((e) => { console.error(e); document.body.appendChild(h('pre', { style: { padding: '20px', color: '#f66' } }, 'Falha ao iniciar: ' + e.message)); }));
+})();
+</script>
+</body>
+</html>
